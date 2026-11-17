@@ -438,6 +438,7 @@ export type QueueEdit =
     | { action: 'clear' | 'undo' }
     | { action: 'remove' | 'moveAfterCurrent'; input: number[] }
     | { action: 'move'; input: { from: number; to: number } }
+    | { action: 'reorder'; input: number[] }
     | { action: 'moveTo'; input: { indices: number[]; offset: number } }
     | { action: 'setRemoveAfterPlay'; input: { indices: number[]; enabled: boolean } };
 export interface QueuePage {
@@ -446,7 +447,7 @@ export interface QueuePage {
     offset: number;
     total: number;
     hasNext: boolean;
-    items: { title: string; artist: string; catalog: { source: CatalogSource; id: string } | null }[];
+    items: { title: string; artist: string; occurrenceId?: string | null; catalog: { source: CatalogSource; id: string } | null }[];
 }
 export interface LyricLine {
     timeMs: number | null;
@@ -478,6 +479,8 @@ export interface WorkshopContext {
         onChanged(listener: (event: LibraryChange) => Awaitable<void>): () => void;
         query(options?: CatalogQuery): Promise<CatalogPage>;
         track(id: string, source?: CatalogSource): Promise<CatalogEntry>;
+        /** Returns found local tracks in input order, with duplicates removed. */
+        tracksByIds(ids: string[]): Promise<CatalogEntry[]>;
         /** Recorded local catalog skips and the latest skip's UTC timestamp. */
         trackSkipStats(id: string): Promise<{ skipCount: number; lastSkippedAt: string | null }>;
         albums(options?: CatalogPageOptions): Promise<CatalogPage>;
@@ -564,6 +567,7 @@ export interface WorkshopContext {
     readonly queue: {
         onChanged(listener: (event: QueueChange) => Awaitable<void>): () => void;
         get(options?: { offset?: number; queueId?: number }): Promise<QueuePage>;
+        playItem(queueId: number, occurrenceId: string): Promise<null>;
         edit(queueId: number, edit: QueueEdit): Promise<null>;
         submit(request: { mode: 'play' | 'append' | 'playNext'; tracks: QueueItem[]; index?: number }): Promise<null>;
     };

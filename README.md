@@ -225,6 +225,11 @@ echo-gpui --workshop release-feed my-plugin-1.2.0.zip https://plugins.example.co
 原版插件声明 `library:read` 后，可查询曲目、专辑、艺人和流派，也能通过这些 ID 查询关联曲目或专辑。
 查询支持 `page`、`pageSize`、搜索、常用排序与格式筛选。GPUI 返回本机索引的元数据；远端提供器查询和
 未映射的筛选选项会报错。收藏的歌曲和专辑可分页读取，`favorites.setTrack` 和 `setAlbum` 使用 `library:control`。
+批量读取曲目与收藏状态可用 `getTracksByIds` 和 `getLikedTrackIds`，每次最多传 200 个曲目 ID。
+
+原版插件声明 `queue:read` 后，可读 `queue.get()` 或 `queue.getPage()`。翻页时传入首次读取的
+`sessionId` 与 `revision`，队列变化会返回过期错误。`queue:control` 可按条目 ID 点播、移动、移除、
+按完整队列重排或清空，也可点播曲目和入队。点播专辑、艺人、流派、歌单或收藏会使用首批最多 100 个条目。
 
 原版插件可用 `library:read` 读取本机普通歌单的 `echo.library.playlists.getItems(id, { page, pageSize })`，
 并用 `library:control` 调用 `removeItems`。原版的 `playlists.delete` 需要单独声明
@@ -486,6 +491,10 @@ export function dispose() {
 `library.smart.freeze(id, { title })` 可指定生成的普通歌单名称，省略时沿用默认名称。
 
 ### 播放输出
+
+`library.tracksByIds(ids)` 一次读取最多 200 个本机曲目，按输入顺序返回找到的曲目并去重。
+`queue.get()` 的条目可带 `occurrenceId`，将它与该页的 `queueId` 一起传给 `queue.playItem`
+可点播指定队列条目。同一首歌在队列中有多条记录时，各条记录的 ID 各自独立。
 
 `context.playback.getRate()` 读取当前速度。`setRate(rate)` 接受 0.5 到 2 倍，并返回应用的速度，
 以百分之一倍为单位。`seekBy(seconds)` 可传正数快进或负数快退。

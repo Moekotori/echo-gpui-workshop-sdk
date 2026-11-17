@@ -136,6 +136,11 @@ Path and folder predicates require `library:path`. Local skip predicates use que
 
 ### Playback and output
 
+Use `library.tracksByIds(ids)` to look up a batch of local tracks. To play a particular queue occurrence,
+pass its `occurrenceId` and the page's `queueId` to `queue.playItem`.
+Original API 2 queue reads use `queue:read`; editing, enqueueing and playing use `queue:control`.
+Reuse the latest page's `sessionId` and `revision` to detect changes across pages.
+
 `playback.getRate()` and `setRate(rate)` read and change speed from 0.5× to 2× in hundredth steps.
 Use `seekBy(seconds)` for signed offsets. Shuffle and repeat commands select GPUI's active playback mode.
 See the [playback guide](README.md#播放输出) for the mode and output behavior.
