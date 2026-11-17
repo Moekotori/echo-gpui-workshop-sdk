@@ -30,6 +30,15 @@
           "pattern": "^(?!\\.{1,2}/)(?!.*\\/\\.{1,2}/)(?:[^/\\\\:]+/)*[^/\\\\:]+\\.mjs$",
           "description": "A package-relative .mjs file. Use forward slashes for portability."
         },
+        "requires": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Host commands and events required before a native plugin can run.",
+          "properties": {
+            "commands": { "type": "array", "items": { "type": "string" } },
+            "events": { "type": "array", "items": { "type": "string" } }
+          }
+        },
         "updateFeed": {
           "type": ["string", "null"],
           "pattern": "^https://[^#]+$",

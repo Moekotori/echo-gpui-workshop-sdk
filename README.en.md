@@ -33,11 +33,25 @@ Run these commands from the extracted SDK with Node.js 18.17 or later. No npm in
 node sdk.mjs templates
 node sdk.mjs init my-plugin community.yourname.my-plugin
 node sdk.mjs check my-plugin
+node sdk.mjs capabilities
 ```
 
 Use `--template live-library` or `--template navidrome` to choose another starter. The offline check reads the
 native GPUI manifest, validates the entry path, and checks entry syntax without running the plugin.
 Use `--workshop test` in ECHO GPUI to validate the runtime and `--workshop pack` to create the install ZIP.
+
+### Discover and require host APIs
+
+`node sdk.mjs capabilities` prints the SDK snapshot. `echo-gpui --workshop capabilities` prints the installed
+build's native API, matching its `host.describe` response. In a native manifest, set
+`gpui.requires` to `{ "commands": ["library.playlistItems"], "events": ["library.changed"] }`
+when those APIs are required for startup. New hosts check this declaration when opening the package.
+Older builds may ignore it. Use `host.describe` for features that have a fallback.
+Device availability and permission checks still apply when a command runs.
+
+`node sdk.mjs capabilities --original-catalog path/to/capability-catalog.json` compares original API 2
+action names against the GPUI legacy Bridge dispatcher. The comparison covers direct dispatch.
+Runner-local, network-routed, and theme actions are outside its scope.
 
 ### Preview with example data
 

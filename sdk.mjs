@@ -15,6 +15,7 @@ const help = `ECHO GPUI Workshop SDK
   node sdk.mjs templates
   node sdk.mjs init <directory> [plugin-id] [--template <name>]
   node sdk.mjs check [project-directory-or-manifest]
+  node sdk.mjs capabilities [--original-catalog <path>]
   node sdk.mjs preview [project-directory-or-manifest] [--page <id>] [--action <method> | --command <id>] [--input <json>] [--fields <json>]
 
 check reads a native GPUI manifest and checks its entry syntax without starting the plugin.
@@ -82,6 +83,10 @@ async function readPackage(path, schema) {
             throw new Error('Set gpui.updateFeed to a public HTTPS release URL without credentials, fragment, or a custom port.');
         }
     }
+    if (Object.hasOwn(data.gpui, 'requires')) {
+        const { capabilities, checkRequirements } = await import('./lib/capabilities.mjs');
+        checkRequirements(data.gpui.requires, await capabilities());
+    }
     const entry = await packageFile(root, join(root, data.gpui.entry));
     return { root, entry, id: data.id, title: data.title, version: data.version };
 }
@@ -145,6 +150,16 @@ async function main(args) {
         console.log(help);
     } else if (command === 'templates' && rest.length === 0) {
         console.log([...templates.keys()].join('\n'));
+    } else if (command === 'capabilities') {
+        const { values } = parseArgs({ args: rest, options: { 'original-catalog': { type: 'string' } } });
+        const { capabilities, compareOriginal } = await import('./lib/capabilities.mjs');
+        const host = await capabilities();
+        const path = values['original-catalog'];
+        const result = path === undefined ? host : {
+            ...host,
+            comparison: compareOriginal(JSON.parse(await readFile(path, 'utf8')), host),
+        };
+        console.log(JSON.stringify(result, null, 2));
     } else if (command === 'check' && rest.length <= 1) {
         const schema = JSON.parse(await readFile(sdkFile('schemas/manifest.schema.json'), 'utf8'));
         const plugin = await readPackage(resolve(rest[0] ?? '.'), schema);

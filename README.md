@@ -65,12 +65,34 @@ echo-gpui --workshop dev
 node sdk.mjs templates
 node sdk.mjs init my-plugin community.yourname.my-plugin
 node sdk.mjs check my-plugin
+node sdk.mjs capabilities
 ```
 
 `init` 使用与 GPUI 相同的示例源码和项目布局，可加 `--template live-library` 或 `--template navidrome`。
 `check` 读取原生 GPUI 清单，检查入口文件位置和 JavaScript 语法，无需执行插件。
 支持传入项目目录、包目录或清单。使用目标版本的 `echo-gpui --workshop test my-plugin`
 验证依赖、页面和宿主调用，用 `--workshop pack` 生成安装包。
+
+### 声明宿主能力
+
+`node sdk.mjs capabilities` 显示 SDK 对应宿主的命令、事件、队列上限，以及原版适配器接受的权限和 Bridge 直接分发的动作。
+安装版的 `echo-gpui --workshop capabilities` 显示当前构建提供的原生接口，输出和插件内的 `host.describe` 一致。
+
+如果插件启动必须依赖某个命令或事件，可在清单的 `gpui` 中添加 `requires`：
+
+```json
+"requires": {
+  "commands": ["library.playlistItems"],
+  "events": ["library.changed"]
+}
+```
+
+新版宿主读包时会检查这些名称，并报告缺失的接口。旧版宿主可能忽略这个字段。
+有降级路径的功能可继续通过 `host.describe` 在运行时判断。接口出现在清单中仍需检查实际设备和运行条件。
+
+迁移原版脚本时，可运行 `node sdk.mjs capabilities --original-catalog path/to/capability-catalog.json`，
+将原版 SDK 的公开动作 ID 与 GPUI 原版 Bridge 分发器做对照。结果只统计直接分发，
+单独走运行器、网络或主题扩展的能力不在匹配结果里。权限被接受后，仍需逐项核对用到的动作。
 
 ### 离线运行预览
 
