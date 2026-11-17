@@ -227,6 +227,7 @@ echo-gpui --workshop release-feed my-plugin-1.2.0.zip https://plugins.example.co
 `library:playlist-delete`，删除的歌单保留在 GPUI 恢复列表里。
 同一接口组的 `list` 和 `get` 可读取本机歌单资料，`create` 可带简介创建，`update` 可修改普通歌单的名称、
 简介和排序。用 `addTracks` 在歌单首部添加原来没有的曲目，返回本次新增条目。旧的顶层方法名也可使用。
+手动排序时可用 `moveItem(playlistId, itemId, position)` 移动指定条目，位置从 0 开始。
 大量歌单请用 `playlists.list` 分页，条目接口按存储顺序返回。
 
 原版包沿用 GPUI 的安装版本授权。经典脚本与原生插件在相同权限的 Node 子进程中运行，
@@ -457,6 +458,8 @@ export function dispose() {
 
 `library.playlistItems(id, { page, pageSize })` 按本机普通歌单的存储顺序读条目。
 页码从 1 开始，一页最多 100 项。条目的 `position` 从 0 开始，未匹配项的 `track` 为 `null`。
+用 `library.movePlaylistItem(id, itemId, position)` 移动手动排序歌单的任意条目，包括待匹配项。
+传入 `playlistItems` 给出的条目 ID 和从 0 开始的目标位置。
 `library.removePlaylistItems(id, itemIds)` 使用上面返回的条目 ID，每次最多移除 200 项。
 任一条目无效时，整批操作会失败。成功时返回 `{ affectedCount, recoveryId }`，可用
 `restorePlaylistRecovery({ kind: 'items', id: recoveryId })` 恢复这次移除。

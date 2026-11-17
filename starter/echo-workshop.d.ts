@@ -499,6 +499,8 @@ export interface WorkshopContext {
         updatePlaylist(id: string, change: PlaylistPatch): Promise<null>;
         /** Move a song to a one-based position in a manually ordered local playlist. */
         movePlaylistTrack(id: string, trackId: string, position: number): Promise<null>;
+        /** Move a playlist item to a zero-based position in the stored order. */
+        movePlaylistItem(id: string, itemId: string, position: number): Promise<null>;
         /** Archive a local playlist so the user can recover it later. */
         archivePlaylist(id: string): Promise<null>;
         playlistRecovery(page?: number): Promise<WorkshopPageResult<PlaylistRecoveryEntry>>;

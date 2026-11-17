@@ -116,6 +116,8 @@ Original API 2 aliases also support listing, reading, creating, editing, and add
 `library.updatePlaylist(id, { title, description })` accepts either field. An empty description clears it.
 `library.movePlaylistTrack(id, trackId, position)` uses a one-based destination in a manually ordered local playlist.
 Use `library.playlistItems(id, { page, pageSize })` to get playlist entry IDs, including unmatched entries.
+`library.movePlaylistItem(id, itemId, position)` moves an entry to a zero-based position in a manually ordered playlist.
+Original API 2 plugins can use `echo.library.playlists.moveItem` with the same position convention.
 `library.removePlaylistItems(id, itemIds)` removes up to 200 entries atomically and returns a recovery ID.
 Restore the batch with `library.restorePlaylistRecovery({ kind: 'items', id: recoveryId })`.
 Use `library.archivePlaylist(id)` for recoverable removal. Page through `library.playlistRecovery(page)`
