@@ -170,6 +170,12 @@ echo-gpui --workshop release-feed my-plugin-1.2.0.zip https://plugins.example.co
 `playback:control` 覆盖播放、暂停、停止、跳转、上一首、下一首和音量。
 `fs:plugin` 提供按插件隔离的 JSON 键值存储。8-BIT 和 VOCAL CUT 的命令需原版 Audio Host
 支持 Workshop DSP，且 GPUI 已具备 ECHO Pro DSP 权限。
+
+声明 `audio:output-read` 后，可使用原版 `echo.audio.output.getStatus()`、`listDevices()` 和
+`refreshDevices()`。设备索引按每次枚举结果分配。在选取设备时，传入该结果里的 `index` 和
+`name`，宿主会一起校验。声明 `audio:output-write` 后可用 `setOutput(settings)` 切换自动输出、
+默认或指定设备、可用的输出模式及延迟档位。手动指定采样率、缓冲帧数和设备音量控制仍需适配。
+
 原版包沿用 GPUI 的安装版本授权。经典脚本与原生插件在相同权限的 Node 子进程中运行，
 只启用自己信任的来源。
 

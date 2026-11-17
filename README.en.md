@@ -68,6 +68,9 @@ Use `await context.hostInvoke('host.describe')` to discover the running host's c
 The [API reference and recipes](README.md#调用-echo) cover library paging, playback, queue edits, plugin storage,
 credentials and events. Test on the ECHO GPUI build your users will run. The [original ECHO SDK](https://github.com/Moekotori/echo-workshop-sdk)
 uses plugin API 2. For an existing original ECHO plugin, see the [GPUI migration notes](README.md#从原版-echo-迁移).
+GPUI supports the original `echo.audio.output` status and device-list calls with `audio:output-read`.
+With `audio:output-write`, `setOutput(settings)` can change automatic output, the selected device,
+available modes and latency profiles. Pass the index and name from the latest device list when selecting a device.
 
 ### Playback and output
 
