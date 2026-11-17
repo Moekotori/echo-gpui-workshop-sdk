@@ -314,6 +314,35 @@ export interface AudioAnalysisFrame {
     /** Loudest channel RMS in dBFS, when available. */
     rmsDbfs: number | null;
 }
+export type AudioOutputMode = 'shared' | 'exclusive' | 'asio' | 'ks' | 'directsound' | 'waveout';
+export interface AudioOutputDevice {
+    id: string;
+    name: string;
+    isDefault: boolean;
+    dedicatedMode: AudioOutputMode | null;
+}
+export interface AudioOutputStatus {
+    status: PlaybackSnapshot['status'];
+    route: 'local' | 'dlna' | 'hqplayer';
+    configured: {
+        mode: AudioOutputMode;
+        automatic: boolean;
+        device: AudioOutputDevice | null;
+        latencyProfile: 'lowLatency' | 'balanced' | 'stable';
+    };
+    /** Local Audio Host report when available. Remote routes and an unopened output return null. */
+    active: {
+        mode: AudioOutputMode;
+        name: string;
+        backend: string;
+        sampleRate: number;
+        hardwareSampleRate: number;
+        sampleRateReadbackValid: boolean | null;
+        channels: number;
+        bufferFrames: number;
+        format: string | null;
+    } | null;
+}
 export type PlaybackCommand =
     | { action: 'toggle' | 'pause' | 'resume' | 'previous' | 'next' | 'stop' }
     | { action: 'seek'; seconds: number }
@@ -406,8 +435,10 @@ export interface WorkshopContext {
         review(options?: HistoryReviewQuery): Promise<HistoryReview>;
     };
     readonly playback: {
+        onChanged(listener: (state: PlaybackSnapshot) => Awaitable<void>): () => void;
         onTrackChanged(listener: (track: CurrentTrack | null) => Awaitable<void>): () => void;
         get(): Promise<PlaybackSnapshot>;
+        getCurrentTrack(): Promise<CurrentTrack | null>;
         control(command: PlaybackCommand): Promise<null>;
         setMode(mode: PlaybackMode): Promise<null>;
         getLyrics(): Promise<{ lines: LyricLine[]; trackOffsetMs: number }>;
@@ -415,6 +446,10 @@ export interface WorkshopContext {
     readonly audio: {
         /** Latest local playback analysis, or null while no current frame is available. */
         onAnalysis(listener: (frame: AudioAnalysisFrame | null) => Awaitable<void>): () => void;
+        readonly output: {
+            getStatus(): Promise<AudioOutputStatus>;
+            listDevices(): Promise<AudioOutputDevice[]>;
+        };
     };
     readonly queue: {
         onChanged(listener: (event: QueueChange) => Awaitable<void>): () => void;

@@ -274,8 +274,8 @@ if (playlist) {
 | SDK 接口 | 用途 |
 | --- | --- |
 | `context.library` | `query` 分页浏览曲库，`track` 按 ID 读取曲目，`playlists` 和 `playlistTracks` 读取歌单。`playPlaylist` 可从指定曲目播放，`queuePlaylist` 将歌单追加到队列。`createPlaylist`、`setPlaylistTracks` 和 `setLiked` 编辑本机歌单与收藏。 |
-| `context.playback` | `get` 读取播放状态，`control` 执行控制，`setMode` 设置顺序、随机、单曲循环或列表循环，`getLyrics` 读取当前歌词。 |
-| `context.audio` | `onAnalysis` 订阅本机播放输出的频谱和电平。 |
+| `context.playback` | `get` 读取播放状态，`getCurrentTrack` 读取当前曲目标识，`onChanged` 订阅播放状态。用 `control` 控制播放，`setMode` 设置播放模式，`getLyrics` 读取当前歌词。 |
+| `context.audio` | `onAnalysis` 订阅本机播放输出的频谱和电平，`output.getStatus` 读取输出状态，`output.listDevices` 枚举本机输出设备。 |
 | `context.queue` | `get` 分页读队列，`edit` 调整队列，`submit` 播放或加入曲库曲目与在线流。 |
 | `context.storage` | `get`、`set`、`remove` 读写插件自己的 JSON 数据，总容量 512 KiB，适合设置与小型缓存。 |
 | `context.credentials` | `get`、`set`、`remove` 使用系统凭据存储保存令牌等字符串，每项最多 4 KiB。已安装插件按数据目录和键隔离凭据。 |
@@ -364,6 +364,29 @@ export function dispose() {
 ```
 
 `pages.invalidate()` 请求重新读取这个插件当前打开的页面。宿主合并短时间内的请求，等现有页面操作完成后再读取。在事件回调中调用它，并让页面读取函数直接返回当前数据。
+
+### 播放输出
+
+`await context.playback.getCurrentTrack()` 与 `onTrackChanged` 返回相同结构。没有当前曲目时返回
+`null`。曲库歌曲带有 `catalog.source` 和 `catalog.id`，可用来查询曲库详情。临时文件和直链播放
+可直接显示 `title` 和 `artist`。
+
+`context.playback.onChanged(listener)` 先提供当前快照，后续变化最多每 500 毫秒上报一次。
+用返回的取消订阅函数结束监听。只需要知道曲目是否切换时，订阅 `onTrackChanged`。
+
+`context.audio.output.getStatus()` 返回 `route`（本机、DLNA 或 HQPlayer）、配置 `configured`
+和 Audio Host 实际报告的本机输出 `active`。例如用户配置的是系统默认设备，实际打开的设备名称
+可从 `active.name` 读取。没有本机输出读数时，`active` 为 `null`。
+`context.audio.output.listDevices()` 在后台探测本机设备，适合在用户打开设备列表或点刷新时调用。
+专用后端设备附带 `dedicatedMode`，设备探测失败时调用会抛错。
+
+```js
+const { commands } = await context.hostInvoke('host.describe');
+if (commands.includes('audio.output.getStatus')) {
+    const { configured, active } = await context.audio.output.getStatus();
+    console.info(configured.mode, active?.name, active?.hardwareSampleRate);
+}
+```
 
 ### 播放频谱和电平
 

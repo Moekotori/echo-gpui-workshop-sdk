@@ -52,6 +52,14 @@ The [API reference and recipes](README.md#调用-echo) cover library paging, pla
 credentials and events. Test on the ECHO GPUI build your users will run. The [original ECHO SDK](https://github.com/Moekotori/echo-workshop-sdk)
 uses plugin API 2. For an existing original ECHO plugin, see the [GPUI migration notes](README.md#从原版-echo-迁移).
 
+### Playback and output
+
+Use `playback.getCurrentTrack()` to read the current track and its catalog ID, and `playback.onChanged(listener)`
+to receive playback snapshots. The subscription returns a function that stops delivery.
+`audio.output.getStatus()` reports the selected route, configured local output, and the active local Audio Host format,
+when available. Use `audio.output.listDevices()` when opening or refreshing a local device list.
+Check `host.describe` for the corresponding commands when targeting older hosts.
+
 ## Publish
 
 - **ZIP** — Share the packed ZIP. Users can drop it into Plugins or select it under **Installed → Install or import file**.
