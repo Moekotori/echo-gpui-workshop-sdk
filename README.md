@@ -72,6 +72,24 @@ node sdk.mjs check my-plugin
 支持传入项目目录、包目录或清单。使用目标版本的 `echo-gpui --workshop test my-plugin`
 验证依赖、页面和宿主调用，用 `--workshop pack` 生成安装包。
 
+### 离线运行预览
+
+```sh
+node sdk.mjs preview starter --action demo.remember
+node sdk.mjs preview starter --command now-playing
+node sdk.mjs preview live-library --action play --input '"demo-2"'
+```
+
+`preview` 用 GPUI 的插件运行器启动原生插件，以 JSON 打印注册项、页面或命令结果。
+默认打开第一个页面，也可用 `--page` 指定页面 ID。用 `--action` 执行该页面上的按钮，
+`--input` 传入按钮数据或命令参数，`--fields` 可传入字符串字段值，如 `'{"query":"Echo"}'`。
+当多个行按钮共用一个方法时，用 `--input` 区分目标。
+
+预览内置示例曲库、歌单、收藏、播放和队列事件，宿主支持的命令可用 `host.describe` 查询。
+每次启动创建独立数据目录，不连接用户曲库、音频设备或系统凭据。
+预览会以当前用户权限执行插件代码，只预览信任的插件。正式发布前用目标版本的
+`--workshop test` 和桌面开发会话检查实际宿主行为及页面布局。
+
 ### 清单和类型
 
 在插件包里放一份 `echo.workshop.json` 和它指向的 JavaScript 入口。可以从 [starter 清单](starter/echo.workshop.json) 开始。

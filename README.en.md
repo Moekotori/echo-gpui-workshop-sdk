@@ -39,6 +39,22 @@ Use `--template live-library` or `--template navidrome` to choose another starte
 native GPUI manifest, validates the entry path, and checks entry syntax without running the plugin.
 Use `--workshop test` in ECHO GPUI to validate the runtime and `--workshop pack` to create the install ZIP.
 
+### Preview with example data
+
+```sh
+node sdk.mjs preview starter --action demo.remember
+node sdk.mjs preview starter --command now-playing
+node sdk.mjs preview live-library --action play --input '"demo-2"'
+```
+
+The SDK runs the plugin with the GPUI JavaScript runner and prints contributions and the page or command result as JSON.
+Pass `--page` to select a page, `--action` to invoke a button, or `--command` to run a registered command.
+`--input` supplies JSON action or command data. `--fields` takes a JSON object of string form values.
+Each run starts with a temporary data directory and example library and queue. Preview only trusted code, since the
+plugin runs with your OS account permissions. Use ECHO GPUI for real library, device, and layout checks.
+
+### Verify in ECHO GPUI
+
 In the commands below, replace `echo-gpui` with the executable from your ECHO GPUI installation.
 For a standalone Windows build use `echo-gpui.exe`. If you installed GPUI through Steam, choose
 **Manage → Browse local files** from your Steam Library and use `EchoZankyo.exe` in the install folder.

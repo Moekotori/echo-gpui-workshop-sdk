@@ -15,8 +15,10 @@ const help = `ECHO GPUI Workshop SDK
   node sdk.mjs templates
   node sdk.mjs init <directory> [plugin-id] [--template <name>]
   node sdk.mjs check [project-directory-or-manifest]
+  node sdk.mjs preview [project-directory-or-manifest] [--page <id>] [--action <method> | --command <id>] [--input <json>] [--fields <json>]
 
 check reads a native GPUI manifest and checks its entry syntax without starting the plugin.
+preview runs trusted native plugins with a temporary data folder and example host data.
 Use ECHO GPUI's --workshop test for runtime validation and --workshop pack for distribution.
 `;
 
@@ -50,7 +52,7 @@ function matches(value, rule) {
     return typeof value === 'string' && new RegExp(rule).exec(value)?.[0] === value;
 }
 
-async function check(path, schema) {
+async function readPackage(path, schema) {
     const manifest = await manifestIn(path);
     const root = await realpath(dirname(manifest));
     const file = await packageFile(root, manifest);
@@ -81,12 +83,15 @@ async function check(path, schema) {
         }
     }
     const entry = await packageFile(root, join(root, data.gpui.entry));
+    return { root, entry, id: data.id, title: data.title, version: data.version };
+}
+
+function checkSyntax(entry) {
     const env = { ...process.env };
     delete env.NODE_OPTIONS;
     const syntax = spawnSync(process.execPath, ['--check', entry], { encoding: 'utf8', env, windowsHide: true });
     if (syntax.error) throw syntax.error;
     if (syntax.status !== 0) throw new Error(syntax.stderr.trim() || 'Entry syntax check failed.');
-    console.log(`Checked ${data.title} v${data.version} (${data.id})`);
 }
 
 async function init(directory, id, templateName, schema) {
@@ -142,7 +147,30 @@ async function main(args) {
         console.log([...templates.keys()].join('\n'));
     } else if (command === 'check' && rest.length <= 1) {
         const schema = JSON.parse(await readFile(sdkFile('schemas/manifest.schema.json'), 'utf8'));
-        await check(resolve(rest[0] ?? '.'), schema);
+        const plugin = await readPackage(resolve(rest[0] ?? '.'), schema);
+        checkSyntax(plugin.entry);
+        console.log(`Checked ${plugin.title} v${plugin.version} (${plugin.id})`);
+    } else if (command === 'preview') {
+        const { positionals, values } = parseArgs({
+            args: rest,
+            allowPositionals: true,
+            options: {
+                page: { type: 'string' },
+                action: { type: 'string' },
+                command: { type: 'string' },
+                input: { type: 'string' },
+                fields: { type: 'string' },
+            },
+        });
+        if (positionals.length > 1 || (values.command && (values.page || values.action || values.fields))
+            || (!values.command && !values.action && (values.input !== undefined || values.fields))) {
+            throw new Error(help);
+        }
+        const schema = JSON.parse(await readFile(sdkFile('schemas/manifest.schema.json'), 'utf8'));
+        const plugin = await readPackage(resolve(positionals[0] ?? '.'), schema);
+        const { preview } = await import('./lib/preview.mjs');
+        const report = await preview(plugin, values);
+        console.log(JSON.stringify(report, null, 2));
     } else if (command === 'init') {
         const { positionals, values } = parseArgs({
             args: rest,
