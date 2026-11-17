@@ -117,6 +117,19 @@ export interface CatalogPage {
     hasNext: boolean;
     total: number | null;
 }
+export type PlaylistPatch =
+    | { title: string; description?: string }
+    | { title?: string; description: string };
+export type PlaylistRecoveryEntry = {
+    id: string;
+    title: string;
+    count: number;
+    createdAt: string;
+} & (
+    | { kind: 'playlist'; action: 'delete' }
+    | { kind: 'items'; action: 'remove' | 'move' | 'clean' | 'relink' }
+    | { kind: 'cloud'; action: 'cloud-overwrite' | 'cloud-delete' }
+);
 export interface GenreQuery extends CatalogPageOptions {
     parent?: string;
     pageSize?: number;
@@ -422,6 +435,13 @@ export interface WorkshopContext {
         queuePlaylist(id: string, options?: { source?: CatalogSource }): Promise<null>;
         createPlaylist(title: string, tracks?: string[]): Promise<{ id: string }>;
         renamePlaylist(id: string, title: string): Promise<null>;
+        updatePlaylist(id: string, change: PlaylistPatch): Promise<null>;
+        /** Move a song to a one-based position in a manually ordered local playlist. */
+        movePlaylistTrack(id: string, trackId: string, position: number): Promise<null>;
+        /** Archive a local playlist so the user can recover it later. */
+        archivePlaylist(id: string): Promise<null>;
+        playlistRecovery(page?: number): Promise<WorkshopPageResult<PlaylistRecoveryEntry>>;
+        restorePlaylistRecovery(entry: Pick<PlaylistRecoveryEntry, 'kind' | 'id'>): Promise<null>;
         setPlaylistTracks(id: string, tracks: string[], present: boolean): Promise<null>;
         setLiked(id: string, liked: boolean): Promise<null>;
         setAlbumLiked(id: string, liked: boolean, source?: CatalogSource): Promise<null>;

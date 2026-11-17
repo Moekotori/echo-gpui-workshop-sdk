@@ -88,6 +88,14 @@ GPUI supports the original `echo.audio.output` status and device-list calls with
 With `audio:output-write`, `setOutput(settings)` can change automatic output, the selected device,
 available modes and latency profiles. Pass the index and name from the latest device list when selecting a device.
 
+### Playlist editing and recovery
+
+`library.updatePlaylist(id, { title, description })` accepts either field. An empty description clears it.
+`library.movePlaylistTrack(id, trackId, position)` uses a one-based destination in a manually ordered local playlist.
+Use `library.archivePlaylist(id)` for recoverable removal. Page through `library.playlistRecovery(page)`
+and pass the selected record to `library.restorePlaylistRecovery(record)`. See the [playlist guide](README.md#编辑与恢复歌单)
+for the scope of offline fixtures and the live host.
+
 ### Playback and output
 
 Use `playback.getCurrentTrack()` to read the current track and its catalog ID, and `playback.onChanged(listener)`

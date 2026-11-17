@@ -408,6 +408,16 @@ export function dispose() {
 
 `pages.invalidate()` 请求重新读取这个插件当前打开的页面。宿主合并短时间内的请求，等现有页面操作完成后再读取。在事件回调中调用它，并让页面读取函数直接返回当前数据。
 
+### 编辑与恢复歌单
+
+`library.updatePlaylist(id, { title, description })` 可只传名称或简介之一。未传字段保持原值，
+简介传空字符串可清空。`library.movePlaylistTrack(id, trackId, position)` 将歌曲移到手动排序歌单中的
+指定位置，序号从 1 开始。两项操作都使用本机曲库 ID。
+
+`library.archivePlaylist(id)` 将歌单移入恢复列表。用 `library.playlistRecovery(page)` 分页读取本机
+恢复记录，并将选中的记录传给 `library.restorePlaylistRecovery(record)`，记录的 `kind` 和 `id`
+共同定位恢复项。桌面端可恢复已归档的歌单、曲目变更或云端快照。离线预览提供一个示例歌单。
+
 ### 播放输出
 
 `await context.playback.getCurrentTrack()` 与 `onTrackChanged` 返回相同结构。没有当前曲目时返回
