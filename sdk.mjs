@@ -15,6 +15,7 @@ const help = `ECHO GPUI Workshop SDK
   node sdk.mjs templates
   node sdk.mjs init <directory> [plugin-id] [--template <name>]
   node sdk.mjs check [project-directory-or-manifest]
+  node sdk.mjs check-original <directory-or-package> [--action <id>] [--event <id>] [--json]
   node sdk.mjs capabilities [--original-catalog <path>]
   node sdk.mjs preview [project-directory-or-manifest] [--page <id>] [--action <method> | --command <id>] [--input <json>] [--fields <json>]
 
@@ -160,6 +161,29 @@ async function main(args) {
             comparison: compareOriginal(JSON.parse(await readFile(path, 'utf8')), host),
         };
         console.log(JSON.stringify(result, null, 2));
+    } else if (command === 'check-original') {
+        const { positionals, values } = parseArgs({
+            args: rest,
+            allowPositionals: true,
+            options: {
+                action: { type: 'string', multiple: true },
+                event: { type: 'string', multiple: true },
+                json: { type: 'boolean' },
+            },
+        });
+        if (positionals.length !== 1) throw new Error(help);
+        const { capabilities } = await import('./lib/capabilities.mjs');
+        const { inspectOriginal } = await import('./lib/original-check.mjs');
+        const report = await inspectOriginal(await manifestIn(resolve(positionals[0])), await capabilities(),
+            { actions: values.action, events: values.event });
+        if (values.json) {
+            console.log(JSON.stringify(report, null, 2));
+        } else {
+            console.log(report.ok ? 'Original plugin manifest checks passed.' : 'Original plugin manifest needs changes.');
+            for (const issue of report.issues) console.log(issue.level + ' ' + issue.field + ' — ' + issue.message);
+            console.log('Use ECHO GPUI --workshop test to verify runtime behavior.');
+        }
+        if (!report.ok) process.exitCode = 1;
     } else if (command === 'check' && rest.length <= 1) {
         const schema = JSON.parse(await readFile(sdkFile('schemas/manifest.schema.json'), 'utf8'));
         const plugin = await readPackage(resolve(rest[0] ?? '.'), schema);

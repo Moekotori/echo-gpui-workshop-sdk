@@ -494,6 +494,19 @@ export function dispose() {
 恢复记录，并将选中的记录传给 `library.restorePlaylistRecovery(record)`，记录的 `kind` 和 `id`
 共同定位恢复项。桌面端可恢复已归档的歌单、曲目变更或云端快照。离线预览提供一个示例歌单。
 
+### 迁移前检查原版插件
+
+```sh
+node sdk.mjs check-original ./my-original-plugin --action library:getTracks --event playback:status
+node sdk.mjs check-original ./my-original-plugin/content/community.echo --json
+```
+
+可传入原版项目目录、`echo.workshop.json`、内部 API 2 清单或 `.echo` 包。
+传工坊清单时会校验入口包的大小和 SHA-256。`--action` 和 `--event` 可重复使用，
+用于核对计划保留的调用是否声明了所需权限。清单未收录的名称会显示警告，
+有错误时退出码为 1，`--json` 可输出结构化结果供 CI 读取。检查只读取包元数据，
+运行行为可用 GPUI 的 `--workshop test` 验证。
+
 ### 本机曲库详情与规则搜索
 
 用 `context.library.summary()` 读取本机曲库汇总，用 `album(id)`、`albumForTrack(trackId)`

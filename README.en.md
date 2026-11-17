@@ -59,6 +59,19 @@ for support, permission and availability in their current session. Check `availa
 Legacy event handlers can subscribe with `echo.events.on(name, handler)`. The runtime `getCapabilities().events` lists subscribed-eligible events for the current permissions.
 Native plugins can use `library.onFavoritesChanged(handler)` when only local favorite changes matter.
 
+### Check an original ECHO plugin before migrating
+
+```sh
+node sdk.mjs check-original ./my-original-plugin --action library:getTracks --event playback:status
+node sdk.mjs check-original ./my-original-plugin/content/community.echo --json
+```
+
+Pass an original project directory, its `echo.workshop.json`, an inner API 2 manifest, or a `.echo` package.
+When you pass the outer Workshop manifest, the check verifies its embedded package size and SHA-256.
+Use repeatable `--action` and `--event` flags to check permissions for the calls you plan to retain.
+An unlisted name gets a warning. Errors return exit status 1, and `--json` exposes structured issues for CI.
+The checker reads package metadata without executing the entry. Run GPUI's `--workshop test` for runtime validation.
+
 ### Local catalog lookup and rule search
 
 Use `context.library.summary()`, `album(id)`, `albumForTrack(trackId)`, and `artist(id)`

@@ -145,6 +145,400 @@
       "presence:control",
       "sources:direct"
     ],
+    "restrictedPermissionPackages": {
+      "sources:direct": [
+        "echo.playlist-directory",
+        "echo.maimai"
+      ],
+      "background:run": [
+        "echo.playlist-directory",
+        "echo.maimai"
+      ],
+      "presence:control": [
+        "echo.maimai"
+      ]
+    },
+    "builtInPackages": {
+      "songbook": "echo.playlist-directory",
+      "ototabi": "echo.maimai"
+    },
+    "actionPermissions": {
+      "audio:dsp:applyGraph": [
+        "audio:dsp-read",
+        "audio:dsp-graph-write"
+      ],
+      "audio:dsp:getGraph": [
+        "audio:dsp-read"
+      ],
+      "audio:dsp:getModule": [
+        "audio:dsp-read"
+      ],
+      "audio:dsp:getRackOrder": [
+        "audio:dsp-read"
+      ],
+      "audio:dsp:listModules": [
+        "audio:dsp-read"
+      ],
+      "audio:dsp:setModule": [
+        "audio:dsp-write"
+      ],
+      "audio:dsp:setRackOrder": [
+        "audio:dsp-write"
+      ],
+      "audio:getSpectrum": [
+        "audio:spectrum"
+      ],
+      "audio:output:getStatus": [
+        "audio:output-read"
+      ],
+      "audio:output:listDevices": [
+        "audio:output-read"
+      ],
+      "audio:output:refreshDevices": [
+        "audio:output-read"
+      ],
+      "audio:output:setOutput": [
+        "audio:output-write"
+      ],
+      "host:getCapabilities": [],
+      "host:getFeatureAvailability": [],
+      "library:addTracksToPlaylist": [
+        "library:control"
+      ],
+      "library:createPlaylist": [
+        "library:control"
+      ],
+      "library:favorites:getAlbumStates": [
+        "library:read"
+      ],
+      "library:favorites:getAlbums": [
+        "library:read"
+      ],
+      "library:favorites:moveTrack": [
+        "library:control"
+      ],
+      "library:favorites:setAlbum": [
+        "library:control"
+      ],
+      "library:favorites:setTrack": [
+        "library:control"
+      ],
+      "library:getAlbum": [
+        "library:read"
+      ],
+      "library:getAlbumForTrack": [
+        "library:read"
+      ],
+      "library:getAlbumTracks": [
+        "library:read"
+      ],
+      "library:getAlbums": [
+        "library:read"
+      ],
+      "library:getArtist": [
+        "library:read"
+      ],
+      "library:getArtistAlbums": [
+        "library:read"
+      ],
+      "library:getArtistTracks": [
+        "library:read"
+      ],
+      "library:getArtists": [
+        "library:read"
+      ],
+      "library:getGenre": [
+        "library:read"
+      ],
+      "library:getGenreAlbums": [
+        "library:read"
+      ],
+      "library:getGenreTracks": [
+        "library:read"
+      ],
+      "library:getGenres": [
+        "library:read"
+      ],
+      "library:getLikedTrackIds": [
+        "library:read"
+      ],
+      "library:getLikedTracks": [
+        "library:read"
+      ],
+      "library:getPlaylistItems": [
+        "library:read"
+      ],
+      "library:getPlaylists": [
+        "library:read"
+      ],
+      "library:getSummary": [
+        "library:read"
+      ],
+      "library:getTrack": [
+        "library:read"
+      ],
+      "library:getTracks": [
+        "library:read"
+      ],
+      "library:getTracksByIds": [
+        "library:read"
+      ],
+      "library:playlists:createSmart": [
+        "library:control"
+      ],
+      "library:playlists:delete": [
+        "library:playlist-delete"
+      ],
+      "library:playlists:freeze": [
+        "library:control"
+      ],
+      "library:playlists:get": [
+        "library:read"
+      ],
+      "library:playlists:getRules": [
+        "library:read"
+      ],
+      "library:playlists:list": [
+        "library:read"
+      ],
+      "library:playlists:moveItem": [
+        "library:control"
+      ],
+      "library:playlists:previewRules": [
+        "library:read"
+      ],
+      "library:playlists:updateRules": [
+        "library:control"
+      ],
+      "library:removePlaylistItems": [
+        "library:control"
+      ],
+      "library:searchTracks": [
+        "library:read"
+      ],
+      "library:tags:change": [
+        "library:personal-write"
+      ],
+      "library:tags:getItems": [
+        "library:read"
+      ],
+      "library:tags:list": [
+        "library:read"
+      ],
+      "library:toggleAlbumLiked": [
+        "library:control"
+      ],
+      "library:toggleTrackLiked": [
+        "library:control"
+      ],
+      "library:updatePlaylist": [
+        "library:control"
+      ],
+      "lyrics:applyCustom": [
+        "lyrics:write"
+      ],
+      "lyrics:clearCache": [
+        "lyrics:write"
+      ],
+      "lyrics:get": [
+        "lyrics:read"
+      ],
+      "lyrics:markInstrumental": [
+        "lyrics:write"
+      ],
+      "lyrics:setCurrentOffset": [
+        "lyrics:write"
+      ],
+      "lyrics:setOffset": [
+        "lyrics:write"
+      ],
+      "playback:cycleRepeat": [
+        "playback:control"
+      ],
+      "playback:getRate": [
+        "playback:read"
+      ],
+      "playback:getStatus": [
+        "playback:read"
+      ],
+      "playback:next": [
+        "playback:control"
+      ],
+      "playback:pause": [
+        "playback:control"
+      ],
+      "playback:play": [
+        "playback:control"
+      ],
+      "playback:previous": [
+        "playback:control"
+      ],
+      "playback:seek": [
+        "playback:control"
+      ],
+      "playback:setRate": [
+        "playback:control"
+      ],
+      "playback:setRepeat": [
+        "playback:control"
+      ],
+      "playback:setShuffle": [
+        "playback:control"
+      ],
+      "playback:setVolume": [
+        "playback:control"
+      ],
+      "playback:stop": [
+        "playback:control"
+      ],
+      "playback:toggleShuffle": [
+        "playback:control"
+      ],
+      "queue:clear": [
+        "queue:control"
+      ],
+      "queue:enqueueTrack": [
+        "queue:control"
+      ],
+      "queue:get": [
+        "queue:read"
+      ],
+      "queue:getPage": [
+        "queue:read"
+      ],
+      "queue:moveItem": [
+        "queue:control"
+      ],
+      "queue:playAlbum": [
+        "queue:control"
+      ],
+      "queue:playArtist": [
+        "queue:control"
+      ],
+      "queue:playGenre": [
+        "queue:control"
+      ],
+      "queue:playItem": [
+        "queue:control"
+      ],
+      "queue:playLiked": [
+        "queue:control"
+      ],
+      "queue:playPlaylist": [
+        "queue:control"
+      ],
+      "queue:playTrack": [
+        "queue:control"
+      ],
+      "queue:removeItem": [
+        "queue:control"
+      ],
+      "queue:reorder": [
+        "queue:control"
+      ],
+      "sleep-timer:cancel": [
+        "sleep-timer:control"
+      ],
+      "sleep-timer:getStatus": [
+        "sleep-timer:control"
+      ],
+      "sleep-timer:start": [
+        "sleep-timer:control"
+      ],
+      "storage:cache:get": [
+        "fs:plugin"
+      ],
+      "storage:cache:remove": [
+        "fs:plugin"
+      ],
+      "storage:cache:set": [
+        "fs:plugin"
+      ],
+      "storage:file:cache:get": [
+        "fs:plugin"
+      ],
+      "storage:file:cache:remove": [
+        "fs:plugin"
+      ],
+      "storage:file:cache:set": [
+        "fs:plugin"
+      ],
+      "storage:file:get": [
+        "fs:plugin"
+      ],
+      "storage:file:records:get": [
+        "fs:plugin"
+      ],
+      "storage:file:records:list": [
+        "fs:plugin"
+      ],
+      "storage:file:records:remove": [
+        "fs:plugin"
+      ],
+      "storage:file:records:set": [
+        "fs:plugin"
+      ],
+      "storage:file:remove": [
+        "fs:plugin"
+      ],
+      "storage:file:set": [
+        "fs:plugin"
+      ],
+      "storage:get": [
+        "fs:plugin"
+      ],
+      "storage:records:get": [
+        "fs:plugin"
+      ],
+      "storage:records:list": [
+        "fs:plugin"
+      ],
+      "storage:records:remove": [
+        "fs:plugin"
+      ],
+      "storage:records:set": [
+        "fs:plugin"
+      ],
+      "storage:remove": [
+        "fs:plugin"
+      ],
+      "storage:set": [
+        "fs:plugin"
+      ],
+      "trusted:invoke": [
+        "system:full"
+      ],
+      "ui:notify": []
+    },
+    "eventPermissions": {
+      "playback:status": [
+        "playback:read"
+      ],
+      "playback:clock": [
+        "playback:read"
+      ],
+      "queue:changed": [
+        "queue:read"
+      ],
+      "library:changed": [
+        "library:read"
+      ],
+      "library:liked-changed": [
+        "library:read"
+      ],
+      "audio:spectrum": [
+        "audio:spectrum"
+      ],
+      "sleep-timer:tick": [
+        "sleep-timer:control"
+      ]
+    },
+    "packageLimits": {
+      "commands": 64,
+      "sourceProviders": 32,
+      "lyricsProviders": 32,
+      "settings": 16
+    },
     "hostActions": [
       "audio:dsp:applyGraph",
       "audio:dsp:getGraph",
