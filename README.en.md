@@ -56,9 +56,24 @@ runner-local actions under `original.runnerActions`.
 
 Original API 2 plugins can call `echo.host.getCapabilities()` and `echo.host.getFeatureAvailability(actionId)`
 for support, permission and availability in their current session. Check `available` before enabling a control.
-Legacy event handlers can subscribe with `echo.events.on(name, handler)`. The published capability snapshot lists
-six event names. The runtime `getCapabilities().events` lists subscribed-eligible events for the current permissions.
+Legacy event handlers can subscribe with `echo.events.on(name, handler)`. The runtime `getCapabilities().events` lists subscribed-eligible events for the current permissions.
 Native plugins can use `library.onFavoritesChanged(handler)` when only local favorite changes matter.
+
+### Sleep timer, tags, and lyrics
+
+Native plugins can call `context.sleepTimer.getStatus()`, `start({ durationMinutes, action, fadeOut })`,
+`cancel()`, and `onTick(({ remainingMs }) => ...)`. The timer is shared with the player. Start accepts
+1–720 whole minutes and `pause`, `stop`, or `quit`. Call the unsubscribe function returned by `onTick`
+when the listener is no longer needed. API 2 plugins use `echo.sleepTimer` with `sleep-timer:control`.
+Offline preview updates its timer fixture on start and cancel. Verify the countdown in the app.
+
+`context.library.tags.mixedItems(tagId, page)` returns a 30-item page across albums, artists, and tracks.
+API 2 plugins can use `echo.library.tags.list(target?)`, `getItems(tagId, page?)`, and `change(edit)`.
+Reads require `library:read` and changes require `library:personal-write`.
+
+API 2 plugins can use `echo.lyrics.get(trackId?)` with `lyrics:read` to read saved lyrics for a local
+track or the current track. The response includes structured lines, word timing where present, and
+a separate offset. The playback stack resolves lyrics through the normal local lyric loader.
 
 ### Preview with example data
 

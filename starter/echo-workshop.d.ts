@@ -458,6 +458,22 @@ export interface LyricLine {
     words: { text: string; startMs: number; endMs: number | null }[];
 }
 
+export type SleepTimerAction = 'pause' | 'stop' | 'quit';
+
+export interface SleepTimerStart {
+    durationMinutes: number;
+    action: SleepTimerAction;
+    fadeOut: boolean;
+}
+
+export interface SleepTimerStatus {
+    isActive: boolean;
+    remainingMs: number;
+    durationMinutes: number;
+    action: SleepTimerAction;
+    fadeOutEnabled: boolean;
+}
+
 export interface WorkshopContext {
     readonly pluginId: string;
     readonly contentRoot: string;
@@ -474,6 +490,13 @@ export interface WorkshopContext {
         get(key: string): Promise<string | null>;
         set(key: string, value: string): Promise<null>;
         remove(key: string): Promise<null>;
+    };
+    readonly sleepTimer: {
+        getStatus(): Promise<SleepTimerStatus>;
+        /** Duration is a whole number of minutes from 1 to 720. */
+        start(input: SleepTimerStart): Promise<SleepTimerStatus>;
+        cancel(): Promise<SleepTimerStatus>;
+        onTick(listener: (event: { remainingMs: number }) => Awaitable<void>): () => void;
     };
     readonly library: {
         onChanged(listener: (event: LibraryChange) => Awaitable<void>): () => void;
@@ -524,6 +547,13 @@ export interface WorkshopContext {
         readonly tags: {
             list(options?: { page?: number; target?: PersonalTagTarget }): Promise<WorkshopPageResult<PersonalTag>>;
             items(id: string, kind: PersonalTagKind, page?: number): Promise<WorkshopPageResult<PersonalTagItem>>;
+            mixedItems(id: string, page?: number): Promise<{
+                items: PersonalTagItem[];
+                page: number;
+                pageSize: number;
+                total: number;
+                hasMore: boolean;
+            }>;
             change(edit: PersonalTagEdit): Promise<{ id: string } | null>;
         };
         readonly smart: {

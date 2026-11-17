@@ -240,6 +240,7 @@ echo-gpui --workshop release-feed my-plugin-1.2.0.zip https://plugins.example.co
 | `queue:changed` | `queue:read` |
 | `library:changed`、`library:liked-changed` | `library:read` |
 | `audio:spectrum` | `audio:spectrum` |
+| `sleep-timer:tick` | `sleep-timer:control` |
 
 这些状态以 500 毫秒节奏合并。收藏事件报告本机收藏变更，频谱使用 Audio Host 上报的频带。
 `library.onChanged` 和 `library.favorites.onChanged` 也可直接使用。
@@ -502,6 +503,20 @@ export function dispose() {
 `library.smart.previewSummary(rules)` 返回候选数、纳入数、请求上限与最多 100 首样本。
 需要更多预览曲目时，可用 `library.smart.preview(rules, page)` 翻页。
 `library.smart.freeze(id, { title })` 可指定生成的普通歌单名称，省略时沿用默认名称。
+
+### 睡眠定时器、标签与歌词
+
+原生插件使用 `context.sleepTimer.getStatus()`、`start({ durationMinutes, action, fadeOut })`、`cancel()`
+和 `onTick(({ remainingMs }) => ...)`，与播放器共用定时器。时长接受 1–720 分钟的整数，动作可选
+`pause`、`stop`、`quit`。用完监听后调用 `onTick` 返回的取消订阅函数。原版插件使用
+`echo.sleepTimer`，需声明 `sleep-timer:control`。离线预览会模拟启动和取消，倒计时可在应用里验证。
+
+`context.library.tags.mixedItems(tagId, page)` 每页返回最多 30 项，可以同时读取专辑、艺人和歌曲。
+原版插件可用 `echo.library.tags.list(target?)`、`getItems(tagId, page?)` 和 `change(edit)`。
+读取需要 `library:read`，修改需要 `library:personal-write`。
+
+原版插件可用 `echo.lyrics.get(trackId?)` 读取当前曲目或指定本机曲目的已保存歌词，需要 `lyrics:read`。
+返回内容包括结构化歌词行、可用的逐字时间以及单独的偏移量。
 
 ### 播放输出
 

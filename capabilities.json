@@ -41,6 +41,7 @@
     "history.review",
     "library.tags.list",
     "library.tags.items",
+    "library.tags.mixedItems",
     "library.tags.change",
     "library.smart.rules",
     "library.smart.preview",
@@ -59,6 +60,9 @@
     "queue.playItem",
     "queue.edit",
     "lyrics.get",
+    "sleepTimer.getStatus",
+    "sleepTimer.start",
+    "sleepTimer.cancel",
     "queue.submit",
     "credentials.get",
     "credentials.set",
@@ -70,7 +74,8 @@
     "queue.changed",
     "library.changed",
     "audio.analysis",
-    "library.likedChanged"
+    "library.likedChanged",
+    "sleepTimer.tick"
   ],
   "maxQueueItems": 256,
   "queueCapacity": 10000,
@@ -85,14 +90,17 @@
       "fs:plugin",
       "library:control",
       "library:path",
+      "library:personal-write",
       "library:playlist-delete",
       "library:read",
       "lyrics:provide",
+      "lyrics:read",
       "network:request",
       "playback:control",
       "playback:read",
       "queue:control",
       "queue:read",
+      "sleep-timer:control",
       "sources:provide",
       "system:full"
     ],
@@ -141,7 +149,11 @@
       "library:playlists:previewRules",
       "library:playlists:updateRules",
       "library:removePlaylistItems",
+      "library:tags:change",
+      "library:tags:getItems",
+      "library:tags:list",
       "library:updatePlaylist",
+      "lyrics:get",
       "playback:cycleRepeat",
       "playback:getRate",
       "playback:getStatus",
@@ -169,7 +181,10 @@
       "queue:playPlaylist",
       "queue:playTrack",
       "queue:removeItem",
-      "queue:reorder"
+      "queue:reorder",
+      "sleep-timer:cancel",
+      "sleep-timer:getStatus",
+      "sleep-timer:start"
     ],
     "runnerActions": [
       "storage:get",
@@ -184,7 +199,8 @@
       "library:liked-changed",
       "playback:clock",
       "playback:status",
-      "queue:changed"
+      "queue:changed",
+      "sleep-timer:tick"
     ]
   }
 }
