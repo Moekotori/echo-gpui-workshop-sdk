@@ -207,7 +207,9 @@ echo-gpui --workshop release-feed my-plugin-1.2.0.zip https://plugins.example.co
 | ECHO 8-BIT | 从插件页切换音效、应用 NES / Game Boy / Arcade 预设，并在「音色细节」调整声部、硬度、位深和采样保持。 |
 | ECHO VOCAL CUT | 从插件页调整消除强度和低频保护。启用时同步调整到 Audio Host，关闭后恢复启用前的音效。 |
 
-`playback:control` 覆盖播放、暂停、停止、跳转、上一首、下一首和音量。
+`playback:control` 覆盖播放、暂停、停止、跳转、上一首、下一首、音量、速度、随机和循环。
+原版插件通过 `playback:read` 读取 `getRate()`。GPUI 会话用一个模式表示顺序、随机、单曲循环和列表循环，
+开启随机或循环会选择相应模式。关闭循环会保留已有的随机模式。
 `fs:plugin` 提供按插件隔离的 JSON 键值存储。8-BIT 和 VOCAL CUT 的命令需原版 Audio Host
 支持 Workshop DSP，且 GPUI 已具备 ECHO Pro DSP 权限。
 
@@ -451,6 +453,11 @@ export function dispose() {
 共同定位恢复项。桌面端可恢复已归档的歌单、曲目变更或云端快照。离线预览提供一个示例歌单。
 
 ### 播放输出
+
+`context.playback.getRate()` 读取当前速度。`setRate(rate)` 接受 0.5 到 2 倍，并返回应用的速度，
+以百分之一倍为单位。`seekBy(seconds)` 可传正数快进或负数快退。
+`setShuffle(enabled)`、`toggleShuffle()`、`setRepeat('off' | 'one' | 'all')` 和 `cycleRepeat()`
+可修改当前播放模式，重复切换顺序为关闭、列表循环、单曲循环。音频输出对速度的限制沿用播放会话。
 
 `await context.playback.getCurrentTrack()` 与 `onTrackChanged` 返回相同结构。没有当前曲目时返回
 `null`。曲库歌曲带有 `catalog.source` 和 `catalog.id`，可用来查询曲库详情。临时文件和直链播放

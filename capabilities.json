@@ -41,6 +41,8 @@
     "library.smart.freeze",
     "playback.get",
     "playback.getCurrentTrack",
+    "playback.getRate",
+    "playback.setRate",
     "playback.control",
     "audio.output.getStatus",
     "audio.output.listDevices",
@@ -94,14 +96,20 @@
       "library:getPlaylistItems",
       "library:playlists:delete",
       "library:removePlaylistItems",
+      "playback:cycleRepeat",
+      "playback:getRate",
       "playback:getStatus",
       "playback:next",
       "playback:pause",
       "playback:play",
       "playback:previous",
       "playback:seek",
+      "playback:setRate",
+      "playback:setRepeat",
+      "playback:setShuffle",
       "playback:setVolume",
-      "playback:stop"
+      "playback:stop",
+      "playback:toggleShuffle"
     ]
   }
 }

@@ -326,6 +326,7 @@ export interface SmartRules {
     albumSource?: Json;
 }
 export type PlaybackMode = 'Sequential' | 'Shuffle' | 'RepeatOne' | 'RepeatAll';
+export type RepeatMode = 'off' | 'one' | 'all';
 export interface PlaybackSnapshot {
     status: 'idle' | 'starting' | 'playing' | 'paused' | 'stopped' | 'ended';
     title: string;
@@ -333,6 +334,7 @@ export interface PlaybackSnapshot {
     position: number;
     duration: number;
     volume: number;
+    rate: number;
     mode: PlaybackMode;
     queueId: number;
     queuePosition: number;
@@ -401,10 +403,12 @@ export interface AudioOutputStatus {
     } | null;
 }
 export type PlaybackCommand =
-    | { action: 'toggle' | 'pause' | 'resume' | 'previous' | 'next' | 'stop' }
-    | { action: 'seek'; seconds: number }
+    | { action: 'toggle' | 'pause' | 'resume' | 'previous' | 'next' | 'stop' | 'toggleShuffle' | 'cycleRepeat' }
+    | { action: 'seek' | 'seekBy'; seconds: number }
     | { action: 'setVolume'; volume: number }
-    | { action: 'setMode'; mode: PlaybackMode };
+    | { action: 'setMode'; mode: PlaybackMode }
+    | { action: 'setShuffle'; enabled: boolean }
+    | { action: 'setRepeat'; mode: RepeatMode };
 export type QueueItem =
     | { kind: 'catalog'; source: CatalogSource; id: string }
     | ({ kind: 'stream'; id: string } & StreamTrack);
@@ -505,8 +509,15 @@ export interface WorkshopContext {
         onTrackChanged(listener: (track: CurrentTrack | null) => Awaitable<void>): () => void;
         get(): Promise<PlaybackSnapshot>;
         getCurrentTrack(): Promise<CurrentTrack | null>;
+        getRate(): Promise<number>;
+        setRate(rate: number): Promise<number>;
         control(command: PlaybackCommand): Promise<null>;
         setMode(mode: PlaybackMode): Promise<null>;
+        seekBy(seconds: number): Promise<null>;
+        setShuffle(enabled: boolean): Promise<null>;
+        toggleShuffle(): Promise<null>;
+        setRepeat(mode: RepeatMode): Promise<null>;
+        cycleRepeat(): Promise<null>;
         getLyrics(): Promise<{ lines: LyricLine[]; trackOffsetMs: number }>;
     };
     readonly audio: {

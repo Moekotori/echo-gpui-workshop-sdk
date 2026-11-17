@@ -115,6 +115,10 @@ for the scope of offline fixtures and the live host.
 
 ### Playback and output
 
+`playback.getRate()` and `setRate(rate)` read and change speed from 0.5× to 2× in hundredth steps.
+Use `seekBy(seconds)` for signed offsets. Shuffle and repeat commands select GPUI's active playback mode.
+See the [playback guide](README.md#播放输出) for the mode and output behavior.
+
 Use `playback.getCurrentTrack()` to read the current track and its catalog ID, and `playback.onChanged(listener)`
 to receive playback snapshots. The subscription returns a function that stops delivery.
 `audio.output.getStatus()` reports the selected route, configured local output, and the active local Audio Host format,
