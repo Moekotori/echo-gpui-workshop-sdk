@@ -477,6 +477,7 @@ export interface WorkshopContext {
     };
     readonly library: {
         onChanged(listener: (event: LibraryChange) => Awaitable<void>): () => void;
+        onFavoritesChanged(listener: (event: LibraryChange) => Awaitable<void>): () => void;
         query(options?: CatalogQuery): Promise<CatalogPage>;
         track(id: string, source?: CatalogSource): Promise<CatalogEntry>;
         /** Returns found local tracks in input order, with duplicates removed. */

@@ -69,7 +69,8 @@
     "playback.trackChanged",
     "queue.changed",
     "library.changed",
-    "audio.analysis"
+    "audio.analysis",
+    "library.likedChanged"
   ],
   "maxQueueItems": 256,
   "queueCapacity": 10000,
@@ -80,6 +81,7 @@
       "audio:dsp-write",
       "audio:output-read",
       "audio:output-write",
+      "audio:spectrum",
       "fs:plugin",
       "library:control",
       "library:path",
@@ -175,6 +177,14 @@
       "storage:set",
       "trusted:invoke",
       "ui:notify"
+    ],
+    "events": [
+      "audio:spectrum",
+      "library:changed",
+      "library:liked-changed",
+      "playback:clock",
+      "playback:status",
+      "queue:changed"
     ]
   }
 }

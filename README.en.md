@@ -56,6 +56,9 @@ runner-local actions under `original.runnerActions`.
 
 Original API 2 plugins can call `echo.host.getCapabilities()` and `echo.host.getFeatureAvailability(actionId)`
 for support, permission and availability in their current session. Check `available` before enabling a control.
+Legacy event handlers can subscribe with `echo.events.on(name, handler)`. The published capability snapshot lists
+six event names. The runtime `getCapabilities().events` lists subscribed-eligible events for the current permissions.
+Native plugins can use `library.onFavoritesChanged(handler)` when only local favorite changes matter.
 
 ### Preview with example data
 

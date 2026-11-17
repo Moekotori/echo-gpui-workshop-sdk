@@ -231,6 +231,19 @@ echo-gpui --workshop release-feed my-plugin-1.2.0.zip https://plugins.example.co
 `sessionId` 与 `revision`，队列变化会返回过期错误。`queue:control` 可按条目 ID 点播、移动、移除、
 按完整队列重排或清空，也可点播曲目和入队。点播专辑、艺人、流派、歌单或收藏会使用首批最多 100 个条目。
 
+旧插件可用 `echo.events.on(name, handler)` 订阅下列事件，调用返回的函数可取消订阅。
+已授权事件可从 `echo.host.getCapabilities().events` 读取（先等待调用结果）。
+
+| 原版事件 | 所需权限 |
+| --- | --- |
+| `playback:status`、`playback:clock` | `playback:read` |
+| `queue:changed` | `queue:read` |
+| `library:changed`、`library:liked-changed` | `library:read` |
+| `audio:spectrum` | `audio:spectrum` |
+
+这些状态以 500 毫秒节奏合并。收藏事件报告本机收藏变更，频谱使用 Audio Host 上报的频带。
+`library.onChanged` 和 `library.favorites.onChanged` 也可直接使用。
+
 原版插件可用 `library:read` 读取本机普通歌单的 `echo.library.playlists.getItems(id, { page, pageSize })`，
 并用 `library:control` 调用 `removeItems`。原版的 `playlists.delete` 需要单独声明
 `library:playlist-delete`，删除的歌单保留在 GPUI 恢复列表里。
@@ -491,6 +504,8 @@ export function dispose() {
 `library.smart.freeze(id, { title })` 可指定生成的普通歌单名称，省略时沿用默认名称。
 
 ### 播放输出
+
+`library.onFavoritesChanged(handler)` 订阅本机歌曲和专辑的收藏变更，返回取消订阅函数。
 
 `library.tracksByIds(ids)` 一次读取最多 200 个本机曲目，按输入顺序返回找到的曲目并去重。
 `queue.get()` 的条目可带 `occurrenceId`，将它与该页的 `queueId` 一起传给 `queue.playItem`
