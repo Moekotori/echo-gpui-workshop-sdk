@@ -21,8 +21,9 @@ SDK 中的文档、类型声明、清单 schema 和示例采用 [MIT 许可](LIC
 桌面开发会话的 `context.dataRoot` 是独立的临时目录，保存重载时保留，停止会话后清理。
 `context.contentRoot` 仍指向源码，开发会话可使用桌面当前的曲库和播放功能。
 
-想用终端时，可直接调用已安装应用里的 `echo-gpui`。Windows 使用 `echo-gpui.exe`，
-macOS 应用包中的程序位于 `Contents/MacOS`。仓库开发构建位于 `target/debug`。
+想用终端时，可直接调用已安装应用里的 `echo-gpui`。下面的命令用 `echo-gpui` 代表程序路径。
+Windows 独立构建使用 `echo-gpui.exe`。通过 Steam 安装 GPUI 时，在游戏库中打开「管理 → 浏览本地文件」，
+使用安装目录里的 `EchoZankyo.exe`。macOS 应用包中的程序位于 `Contents/MacOS`。
 
 ```sh
 echo-gpui --workshop doctor

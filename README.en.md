@@ -26,7 +26,9 @@ playback state. CLI `test` and `dev` use a temporary library.
 
 ## Build and verify
 
-Run the `echo-gpui` executable from your ECHO GPUI installation. On Windows it is `echo-gpui.exe`.
+In the commands below, replace `echo-gpui` with the executable from your ECHO GPUI installation.
+For a standalone Windows build use `echo-gpui.exe`. If you installed GPUI through Steam, choose
+**Manage → Browse local files** from your Steam Library and use `EchoZankyo.exe` in the install folder.
 On macOS look in the app bundle's `Contents/MacOS` folder.
 
 ```sh
