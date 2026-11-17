@@ -508,6 +508,33 @@ export interface TrackSearchPage {
     hasMore: boolean;
 }
 
+export type PlaybackSpeedMode = 'Speed' | 'Nightcore' | 'Daycore';
+
+export interface PlaybackSpeed {
+    rate: number;
+    mode: PlaybackSpeedMode;
+}
+
+export interface SegmentLoopStatus {
+    trackInstance: string | null;
+    available: boolean;
+    start: number | null;
+    end: number | null;
+    enabled: boolean;
+}
+
+export type SegmentLoopEdit = { action: 'mark'; point: 'Start' | 'End' }
+    | { action: 'move'; point: 'Start' | 'End'; seconds: number }
+    | { action: 'toggle' | 'jumpToStart' | 'clear' };
+
+export interface DspGraph {
+    /** Supply this revision when applying edits to reject stale graph changes. */
+    revision: string;
+    filters: { [key: string]: Json }[];
+    sequence: string[];
+    procedural: { [key: string]: Json };
+}
+
 export interface WorkshopContext {
     readonly pluginId: string;
     readonly contentRoot: string;
@@ -616,6 +643,10 @@ export interface WorkshopContext {
         get(): Promise<PlaybackSnapshot>;
         getCurrentTrack(): Promise<CurrentTrack | null>;
         getRate(): Promise<number>;
+        getSpeed(): Promise<PlaybackSpeed>;
+        setSpeed(rate: number, mode: PlaybackSpeedMode): Promise<PlaybackSpeed>;
+        getSegmentLoop(): Promise<SegmentLoopStatus>;
+        editSegmentLoop(trackInstance: string, edit: SegmentLoopEdit): Promise<SegmentLoopStatus>;
         setRate(rate: number): Promise<number>;
         control(command: PlaybackCommand): Promise<null>;
         setMode(mode: PlaybackMode): Promise<null>;
@@ -629,6 +660,14 @@ export interface WorkshopContext {
     readonly audio: {
         /** Latest local playback analysis, or null while no current frame is available. */
         onAnalysis(listener: (frame: AudioAnalysisFrame | null) => Awaitable<void>): () => void;
+        getAnalysis(): Promise<AudioAnalysisFrame | null>;
+        /** Requires ECHO Pro DSP. Use getGraph to obtain the current revision. */
+        readonly dsp: {
+            getGraph(): Promise<DspGraph>;
+            applyGraph(graph: DspGraph): Promise<DspGraph>;
+            getRackOrder(): Promise<string[]>;
+            setRackOrder(order: string[]): Promise<string[]>;
+        };
         readonly output: {
             getStatus(): Promise<AudioOutputStatus>;
             listDevices(): Promise<AudioOutputDevice[]>;

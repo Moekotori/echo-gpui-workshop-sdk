@@ -533,6 +533,22 @@ export function dispose() {
 原版插件可用 `echo.lyrics.get(trackId?)` 读取当前曲目或指定本机曲目的已保存歌词，需要 `lyrics:read`。
 返回内容包括结构化歌词行、可用的逐字时间以及单独的偏移量。
 
+### 播放控制、频谱与 DSP
+
+`context.playback.getSpeed()` 和 `setSpeed(rate, mode)` 一起读取和设置播放速度与模式。
+速度范围为 0.5–2，模式为 `Speed`、`Nightcore`、`Daycore`。`getSegmentLoop()` 返回
+A/B 循环状态与当前 `trackInstance`，传给 `editSegmentLoop(trackInstance, edit)` 可打点、
+移动、开关、跳到 A 点或清空。切歌后旧标识会失效，循环只在可用的播放链路上启用。
+
+`context.audio.getAnalysis()` 读取输出频谱以及可用的峰值和 RMS 电平，无新鲜数据时返回 `null`。
+持续刷新用 `onAnalysis`。原版插件可用 `echo.audio.getSpectrum()`，需要 `audio:spectrum`。
+
+ECHO Pro DSP 提供 `audio.dsp.getGraph()`、`applyGraph(graph)`、`getRackOrder()` 和
+`setRackOrder(order)`。先读取处理链，再带原版本号提交编辑。遇到 `dsp-graph-conflict` 时
+重新读取后再编辑。排序保留已有滤波器实例，卷积库引用通过应用管理。
+原版读取需 `audio:dsp-read`，修改处理链需同时声明 `audio:dsp-read` 和 `audio:dsp-graph-write`，
+改顺序需 `audio:dsp-write`。`listModules()` 返回宿主可读的内置模块。
+
 ### 播放输出
 
 `library.onFavoritesChanged(handler)` 订阅本机歌曲和专辑的收藏变更，返回取消订阅函数。

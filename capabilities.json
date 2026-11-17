@@ -57,6 +57,15 @@
     "playback.get",
     "playback.getCurrentTrack",
     "playback.getRate",
+    "playback.getSpeed",
+    "playback.setSpeed",
+    "playback.getSegmentLoop",
+    "playback.editSegmentLoop",
+    "audio.getAnalysis",
+    "audio.dsp.getGraph",
+    "audio.dsp.applyGraph",
+    "audio.dsp.getRackOrder",
+    "audio.dsp.setRackOrder",
     "playback.setRate",
     "playback.control",
     "audio.output.getStatus",
@@ -88,6 +97,7 @@
   "original": {
     "apiVersion": 2,
     "acceptedPermissions": [
+      "audio:dsp-graph-write",
       "audio:dsp-read",
       "audio:dsp-write",
       "audio:output-read",
@@ -116,8 +126,14 @@
       "sources:direct"
     ],
     "hostActions": [
+      "audio:dsp:applyGraph",
+      "audio:dsp:getGraph",
       "audio:dsp:getModule",
+      "audio:dsp:getRackOrder",
+      "audio:dsp:listModules",
       "audio:dsp:setModule",
+      "audio:dsp:setRackOrder",
+      "audio:getSpectrum",
       "audio:output:getStatus",
       "audio:output:listDevices",
       "audio:output:refreshDevices",

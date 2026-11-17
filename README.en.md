@@ -75,6 +75,25 @@ API 2 plugins use `echo.library.getSummary()`, `getAlbum(id)`, `getAlbumForTrack
 with `library:read`. Searching by file path or folder requires `library:path`.
 The search response omits local file paths.
 
+### Playback controls and DSP
+
+`context.playback.getSpeed()` and `setSpeed(rate, mode)` read and update the speed and mode
+together. Rates are 0.5–2 and modes are `Speed`, `Nightcore`, and `Daycore`.
+`getSegmentLoop()` returns the available A/B marks and the current `trackInstance`.
+Pass that ID to `editSegmentLoop(trackInstance, edit)` to mark, move, toggle, jump to A, or clear.
+Stale track instances are rejected. Looping is available on suitable seekable playback routes.
+
+`context.audio.getAnalysis()` reads the current output spectrum and available peak/RMS levels.
+It returns `null` when no fresh frame is available. Use `onAnalysis` for continuous updates.
+Original API 2 plugins can read the spectrum with `echo.audio.getSpectrum()` and `audio:spectrum`.
+
+With ECHO Pro DSP, native and original plugins can use `audio.dsp.getGraph()`, `applyGraph(graph)`,
+`getRackOrder()`, and `setRackOrder(order)`. Read the graph revision, edit that snapshot, and
+submit it with the same revision. On `dsp-graph-conflict`, fetch the current graph before retrying.
+Rack orders preserve filter instances. Importing or editing convolution bank references uses the app.
+API 2 uses `audio:dsp-read` for reads, `audio:dsp-read` and `audio:dsp-graph-write` for graph updates,
+and `audio:dsp-write` for order changes. `listModules()` lists built-in modules this host can read.
+
 ### Sleep timer, tags, and lyrics
 
 Native plugins can call `context.sleepTimer.getStatus()`, `start({ durationMinutes, action, fadeOut })`,
