@@ -1,0 +1,9 @@
+{
+  "type": "echo-workshop-item",
+  "schemaVersion": 1,
+  "id": "community.navidrome-example",
+  "title": "Navidrome",
+  "version": "1.0.0",
+  "content": { "kind": "plugin-package" },
+  "gpui": { "protocol": 1, "entry": "plugin.mjs" }
+}

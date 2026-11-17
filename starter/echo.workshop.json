@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Moekotori/echo-gpui-workshop-sdk/main/schemas/manifest.schema.json",
+  "type": "echo-workshop-item",
+  "schemaVersion": 1,
+  "id": "community.starter-example",
+  "title": "My plugin",
+  "version": "0.1.0",
+  "content": { "kind": "plugin-package" },
+  "gpui": { "protocol": 1, "entry": "plugin.mjs" }
+}

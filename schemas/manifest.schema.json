@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/Moekotori/echo-gpui-workshop-sdk/main/schemas/manifest.schema.json",
+  "title": "ECHO GPUI Workshop plugin (protocol 1)",
+  "type": "object",
+  "required": ["type", "schemaVersion", "id", "title", "version", "content", "gpui"],
+  "properties": {
+    "type": { "const": "echo-workshop-item" },
+    "schemaVersion": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9._-]{1,80}$" },
+    "title": { "type": "string", "pattern": "\\S" },
+    "version": {
+      "type": "string",
+      "pattern": "\\S",
+      "description": "Use SemVer for releases with an independent update feed."
+    },
+    "description": { "type": "string" },
+    "content": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": { "kind": { "const": "plugin-package" } }
+    },
+    "gpui": {
+      "type": "object",
+      "required": ["protocol", "entry"],
+      "properties": {
+        "protocol": { "const": 1 },
+        "entry": {
+          "type": "string",
+          "pattern": "^(?!\\.{1,2}/)(?!.*\\/\\.{1,2}/)(?:[^/\\\\:]+/)*[^/\\\\:]+\\.mjs$",
+          "description": "A package-relative .mjs file. Use forward slashes for portability."
+        },
+        "updateFeed": {
+          "type": ["string", "null"],
+          "pattern": "^https://[^#]+$",
+          "maxLength": 4096,
+          "description": "Optional public HTTPS release JSON. The host validates the URL and SemVer."
+        }
+      }
+    }
+  }
+}
