@@ -166,6 +166,21 @@ export interface PlaylistItemPage {
     total: number;
     hasMore: boolean;
 }
+export interface PlaylistSummary {
+    id: string;
+    title: string;
+    description: string;
+    itemCount: number;
+    smart: boolean;
+    sort: { key: string; descending: boolean } | null;
+}
+export interface PlaylistSummaryPage {
+    items: PlaylistSummary[];
+    page: number;
+    pageSize: number;
+    total: number;
+    hasMore: boolean;
+}
 export interface GenreQuery extends CatalogPageOptions {
     parent?: string;
     pageSize?: number;
@@ -472,6 +487,10 @@ export interface WorkshopContext {
         playlists(options?: CatalogPageOptions): Promise<CatalogPage>;
         playlistTracks(id: string, options?: { source?: CatalogSource; page?: number }): Promise<CatalogPage>;
         playlistItems(id: string, options?: { page?: number; pageSize?: number }): Promise<PlaylistItemPage>;
+        playlistSummary(id: string): Promise<PlaylistSummary>;
+        playlistSummaries(options?: { page?: number; pageSize?: number; search?: string }): Promise<PlaylistSummaryPage>;
+        createPlaylistWithDetails(details: { title: string; description?: string }): Promise<PlaylistSummary>;
+        prependPlaylistTracks(id: string, trackIds: string[]): Promise<PlaylistItem[]>;
         removePlaylistItems(id: string, itemIds: string[]): Promise<{ affectedCount: number; recoveryId: string }>;
         playPlaylist(id: string, options?: { source?: CatalogSource; trackId?: string }): Promise<null>;
         queuePlaylist(id: string, options?: { source?: CatalogSource }): Promise<null>;

@@ -225,6 +225,9 @@ echo-gpui --workshop release-feed my-plugin-1.2.0.zip https://plugins.example.co
 原版插件可用 `library:read` 读取本机普通歌单的 `echo.library.playlists.getItems(id, { page, pageSize })`，
 并用 `library:control` 调用 `removeItems`。原版的 `playlists.delete` 需要单独声明
 `library:playlist-delete`，删除的歌单保留在 GPUI 恢复列表里。
+同一接口组的 `list` 和 `get` 可读取本机歌单资料，`create` 可带简介创建，`update` 可修改普通歌单的名称、
+简介和排序。用 `addTracks` 在歌单首部添加原来没有的曲目，返回本次新增条目。旧的顶层方法名也可使用。
+大量歌单请用 `playlists.list` 分页，条目接口按存储顺序返回。
 
 原版包沿用 GPUI 的安装版本授权。经典脚本与原生插件在相同权限的 Node 子进程中运行，
 只启用自己信任的来源。
@@ -441,6 +444,12 @@ export function dispose() {
 `pages.invalidate()` 请求重新读取这个插件当前打开的页面。宿主合并短时间内的请求，等现有页面操作完成后再读取。在事件回调中调用它，并让页面读取函数直接返回当前数据。
 
 ### 编辑与恢复歌单
+
+`library.playlistSummaries({ search, page, pageSize })` 按名称筛选并分页读取本机歌单，
+`library.playlistSummary(id)` 读取单个歌单的名称、简介、条目数和排序。
+`library.createPlaylistWithDetails({ title, description })` 一次保存名称和简介。
+`library.prependPlaylistTracks(id, trackIds)` 将新曲目放在普通歌单首部，保留原有条目相对顺序，
+返回本次实际新增的条目。如果某个曲库 ID 无效，整批写入会被拒绝。
 
 `library.updatePlaylist(id, { title, description })` 可只传名称或简介之一。未传字段保持原值，
 简介传空字符串可清空。`library.movePlaylistTrack(id, trackId, position)` 将歌曲移到手动排序歌单中的

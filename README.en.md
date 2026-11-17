@@ -108,6 +108,11 @@ available modes and latency profiles. Pass the index and name from the latest de
 
 ### Playlist editing and recovery
 
+Use `library.playlistSummaries({ search, page, pageSize })` and `library.playlistSummary(id)` to read local playlist metadata.
+`library.createPlaylistWithDetails({ title, description })` saves both fields together.
+`library.prependPlaylistTracks(id, trackIds)` inserts new tracks at the beginning and returns the added entries.
+Original API 2 aliases also support listing, reading, creating, editing, and adding tracks to local manual playlists.
+
 `library.updatePlaylist(id, { title, description })` accepts either field. An empty description clears it.
 `library.movePlaylistTrack(id, trackId, position)` uses a one-based destination in a manually ordered local playlist.
 Use `library.playlistItems(id, { page, pageSize })` to get playlist entry IDs, including unmatched entries.
