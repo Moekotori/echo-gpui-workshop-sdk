@@ -194,6 +194,10 @@ echo-gpui --workshop release-feed my-plugin-1.2.0.zip https://plugins.example.co
 `name`，宿主会一起校验。声明 `audio:output-write` 后可用 `setOutput(settings)` 切换自动输出、
 默认或指定设备、可用的输出模式及延迟档位。手动指定采样率、缓冲帧数和设备音量控制仍需适配。
 
+原版插件可用 `library:read` 读取本机普通歌单的 `echo.library.playlists.getItems(id, { page, pageSize })`，
+并用 `library:control` 调用 `removeItems`。原版的 `playlists.delete` 需要单独声明
+`library:playlist-delete`，删除的歌单保留在 GPUI 恢复列表里。
+
 原版包沿用 GPUI 的安装版本授权。经典脚本与原生插件在相同权限的 Node 子进程中运行，
 只启用自己信任的来源。
 
@@ -413,6 +417,12 @@ export function dispose() {
 `library.updatePlaylist(id, { title, description })` 可只传名称或简介之一。未传字段保持原值，
 简介传空字符串可清空。`library.movePlaylistTrack(id, trackId, position)` 将歌曲移到手动排序歌单中的
 指定位置，序号从 1 开始。两项操作都使用本机曲库 ID。
+
+`library.playlistItems(id, { page, pageSize })` 按本机普通歌单的存储顺序读条目。
+页码从 1 开始，一页最多 100 项。条目的 `position` 从 0 开始，未匹配项的 `track` 为 `null`。
+`library.removePlaylistItems(id, itemIds)` 使用上面返回的条目 ID，每次最多移除 200 项。
+任一条目无效时，整批操作会失败。成功时返回 `{ affectedCount, recoveryId }`，可用
+`restorePlaylistRecovery({ kind: 'items', id: recoveryId })` 恢复这次移除。
 
 `library.archivePlaylist(id)` 将歌单移入恢复列表。用 `library.playlistRecovery(page)` 分页读取本机
 恢复记录，并将选中的记录传给 `library.restorePlaylistRecovery(record)`，记录的 `kind` 和 `id`

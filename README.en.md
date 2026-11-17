@@ -92,6 +92,9 @@ available modes and latency profiles. Pass the index and name from the latest de
 
 `library.updatePlaylist(id, { title, description })` accepts either field. An empty description clears it.
 `library.movePlaylistTrack(id, trackId, position)` uses a one-based destination in a manually ordered local playlist.
+Use `library.playlistItems(id, { page, pageSize })` to get playlist entry IDs, including unmatched entries.
+`library.removePlaylistItems(id, itemIds)` removes up to 200 entries atomically and returns a recovery ID.
+Restore the batch with `library.restorePlaylistRecovery({ kind: 'items', id: recoveryId })`.
 Use `library.archivePlaylist(id)` for recoverable removal. Page through `library.playlistRecovery(page)`
 and pass the selected record to `library.restorePlaylistRecovery(record)`. See the [playlist guide](README.md#编辑与恢复歌单)
 for the scope of offline fixtures and the live host.

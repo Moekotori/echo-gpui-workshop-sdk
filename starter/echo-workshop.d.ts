@@ -130,6 +130,42 @@ export type PlaylistRecoveryEntry = {
     | { kind: 'items'; action: 'remove' | 'move' | 'clean' | 'relink' }
     | { kind: 'cloud'; action: 'cloud-overwrite' | 'cloud-delete' }
 );
+export interface PlaylistItemTrack {
+    id: string;
+    mediaType: 'local' | 'remote';
+    title: string;
+    artist: string;
+    album: string;
+    albumArtist: string;
+    trackNo: number | null;
+    discNo: number | null;
+    year: number | null;
+    genre: string | null;
+    durationSeconds: number;
+    codec: string | null;
+    sampleRate: number | null;
+    bitDepth: number | null;
+    bitrate: number | null;
+    coverUrl: string | null;
+    unavailable: boolean;
+}
+export interface PlaylistItem {
+    id: string;
+    playlistId: string;
+    /** Zero-based position in the playlist's stored order. */
+    position: number;
+    title: string;
+    artist: string;
+    unavailable: boolean;
+    track: PlaylistItemTrack | null;
+}
+export interface PlaylistItemPage {
+    items: PlaylistItem[];
+    page: number;
+    pageSize: number;
+    total: number;
+    hasMore: boolean;
+}
 export interface GenreQuery extends CatalogPageOptions {
     parent?: string;
     pageSize?: number;
@@ -431,6 +467,8 @@ export interface WorkshopContext {
         likedAlbums(options?: CatalogPageOptions): Promise<CatalogPage>;
         playlists(options?: CatalogPageOptions): Promise<CatalogPage>;
         playlistTracks(id: string, options?: { source?: CatalogSource; page?: number }): Promise<CatalogPage>;
+        playlistItems(id: string, options?: { page?: number; pageSize?: number }): Promise<PlaylistItemPage>;
+        removePlaylistItems(id: string, itemIds: string[]): Promise<{ affectedCount: number; recoveryId: string }>;
         playPlaylist(id: string, options?: { source?: CatalogSource; trackId?: string }): Promise<null>;
         queuePlaylist(id: string, options?: { source?: CatalogSource }): Promise<null>;
         createPlaylist(title: string, tracks?: string[]): Promise<{ id: string }>;
