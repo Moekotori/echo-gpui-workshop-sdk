@@ -530,6 +530,17 @@ export function dispose() {
 原版插件可用 `echo.library.tags.list(target?)`、`getItems(tagId, page?)` 和 `change(edit)`。
 读取需要 `library:read`，修改需要 `library:personal-write`。
 
+### 收藏
+
+`context.library.toggleTrackLiked(id)` 和 `toggleAlbumLiked(id)` 返回提交后的 `liked` 状态。
+`setTracksLiked(ids, liked)` 一次更新最多 256 首曲目，`trackFavoriteStates(ids)` 一次读取最多
+200 首曲目的收藏状态。`setArtistFavorite(id, favorite)` 可设置本机艺人收藏。
+`moveLikedTrack(id, position)` 使用曲目 ID 和从 0 开始的目标位置。
+
+原版插件声明 `library:control` 后可用 `echo.library.toggleTrackLiked`、`toggleAlbumLiked`
+和 `echo.library.favorites.moveTrack(itemId, position)`。排序时用 `favorites.getTracks()`
+返回的列表条目 ID。
+
 ### 编辑本机曲目歌词
 
 用 `context.lyrics.get(trackId?)` 读取当前曲目或指定本机曲目的歌词。

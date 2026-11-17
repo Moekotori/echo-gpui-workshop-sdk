@@ -674,6 +674,15 @@ export interface WorkshopContext {
         restorePlaylistRecovery(entry: Pick<PlaylistRecoveryEntry, 'kind' | 'id'>): Promise<null>;
         setPlaylistTracks(id: string, tracks: string[], present: boolean): Promise<null>;
         setLiked(id: string, liked: boolean): Promise<null>;
+        toggleTrackLiked(id: string): Promise<{ trackId: string; liked: boolean }>;
+        toggleAlbumLiked(id: string): Promise<{ albumId: string; liked: boolean }>;
+        /** Move a favorite track to a zero-based position in the stored order. */
+        moveLikedTrack(id: string, position: number): Promise<null>;
+        /** Update a batch of up to 256 track IDs together. */
+        setTracksLiked(ids: string[], liked: boolean): Promise<null>;
+        /** Return a Boolean for each of up to 200 track IDs. */
+        trackFavoriteStates(ids: string[]): Promise<Record<string, boolean>>;
+        setArtistFavorite(id: string, favorite: boolean): Promise<null>;
         setAlbumLiked(id: string, liked: boolean, source?: CatalogSource): Promise<null>;
         readonly tags: {
             list(options?: { page?: number; target?: PersonalTagTarget }): Promise<WorkshopPageResult<PersonalTag>>;

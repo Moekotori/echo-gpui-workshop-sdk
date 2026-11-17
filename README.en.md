@@ -75,6 +75,17 @@ API 2 plugins use `echo.library.getSummary()`, `getAlbum(id)`, `getAlbumForTrack
 with `library:read`. Searching by file path or folder requires `library:path`.
 The search response omits local file paths.
 
+### Favorites
+
+`context.library.toggleTrackLiked(id)` and `toggleAlbumLiked(id)` return the committed `liked` state.
+Use `setTracksLiked(ids, liked)` to update up to 256 tracks together and `trackFavoriteStates(ids)`
+to read up to 200 states. `setArtistFavorite(id, favorite)` sets the local artist's favorite state.
+Use a track ID and a zero-based position with `moveLikedTrack(id, position)`.
+
+Original API 2 plugins use `echo.library.toggleTrackLiked` and `toggleAlbumLiked` or
+`echo.library.favorites.moveTrack(itemId, position)` with `library:control`.
+For `moveTrack`, pass the list item ID from `favorites.getTracks()`.
+
 ### Edit local track lyrics
 
 Read the current track or a local track with `context.lyrics.get(trackId?)`. Apply an LRC, TTML, or
