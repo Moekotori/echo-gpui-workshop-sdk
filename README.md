@@ -56,6 +56,22 @@ echo-gpui --workshop dev
 - `test` 和 `dev` 会执行插件代码，只对自己信任的包运行。打包版使用随附的 Node.js。
   未随附运行时的开发构建可用系统 Node.js 18.17 或更新版本，也可用 `ECHO_GPUI_NODE` 指定。
 
+### 离线创建与检查
+
+下载并解压 [SDK ZIP](https://github.com/Moekotori/echo-gpui-workshop-sdk/releases/latest) 后，在 SDK 目录中运行。
+这组命令使用 Node.js 18.17 或更新版本。适合没有安装 GPUI 的开发机和 CI，无需 npm 安装依赖。
+
+```sh
+node sdk.mjs templates
+node sdk.mjs init my-plugin community.yourname.my-plugin
+node sdk.mjs check my-plugin
+```
+
+`init` 使用与 GPUI 相同的示例源码和项目布局，可加 `--template live-library` 或 `--template navidrome`。
+`check` 读取原生 GPUI 清单，检查入口文件位置和 JavaScript 语法，无需执行插件。
+支持传入项目目录、包目录或清单。使用目标版本的 `echo-gpui --workshop test my-plugin`
+验证依赖、页面和宿主调用，用 `--workshop pack` 生成安装包。
+
 ### 清单和类型
 
 在插件包里放一份 `echo.workshop.json` 和它指向的 JavaScript 入口。可以从 [starter 清单](starter/echo.workshop.json) 开始。

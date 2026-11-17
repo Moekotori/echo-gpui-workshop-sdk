@@ -26,6 +26,19 @@ playback state. CLI `test` and `dev` use a temporary library.
 
 ## Build and verify
 
+The [SDK ZIP](https://github.com/Moekotori/echo-gpui-workshop-sdk/releases/latest) includes an offline tool.
+Run these commands from the extracted SDK with Node.js 18.17 or later. No npm install is needed.
+
+```sh
+node sdk.mjs templates
+node sdk.mjs init my-plugin community.yourname.my-plugin
+node sdk.mjs check my-plugin
+```
+
+Use `--template live-library` or `--template navidrome` to choose another starter. The offline check reads the
+native GPUI manifest, validates the entry path, and checks entry syntax without running the plugin.
+Use `--workshop test` in ECHO GPUI to validate the runtime and `--workshop pack` to create the install ZIP.
+
 In the commands below, replace `echo-gpui` with the executable from your ECHO GPUI installation.
 For a standalone Windows build use `echo-gpui.exe`. If you installed GPUI through Steam, choose
 **Manage → Browse local files** from your Steam Library and use `EchoZankyo.exe` in the install folder.
