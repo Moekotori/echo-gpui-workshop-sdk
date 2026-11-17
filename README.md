@@ -229,6 +229,9 @@ echo-gpui --workshop release-feed my-plugin-1.2.0.zip https://plugins.example.co
 简介和排序。用 `addTracks` 在歌单首部添加原来没有的曲目，返回本次新增条目。旧的顶层方法名也可使用。
 手动排序时可用 `moveItem(playlistId, itemId, position)` 移动指定条目，位置从 0 开始。
 大量歌单请用 `playlists.list` 分页，条目接口按存储顺序返回。
+原版智能歌单可用 `playlists.getRules`、`previewRules`、`createSmart`、`updateRules` 和 `freeze`。
+读取和预览需要 `library:read`，创建、更新和固定需要 `library:control`。路径和文件夹规则另需
+`library:path`。GPUI 本机曲库暂不支持按跳过次数或最后跳过时间筛选，相关条件会返回错误。
 
 原版包沿用 GPUI 的安装版本授权。经典脚本与原生插件在相同权限的 Node 子进程中运行，
 只启用自己信任的来源。
@@ -467,6 +470,12 @@ export function dispose() {
 `library.archivePlaylist(id)` 将歌单移入恢复列表。用 `library.playlistRecovery(page)` 分页读取本机
 恢复记录，并将选中的记录传给 `library.restorePlaylistRecovery(record)`，记录的 `kind` 和 `id`
 共同定位恢复项。桌面端可恢复已归档的歌单、曲目变更或云端快照。离线预览提供一个示例歌单。
+
+### 智能歌单预览
+
+`library.smart.previewSummary(rules)` 返回候选数、纳入数、请求上限与最多 100 首样本。
+需要更多预览曲目时，可用 `library.smart.preview(rules, page)` 翻页。
+`library.smart.freeze(id, { title })` 可指定生成的普通歌单名称，省略时沿用默认名称。
 
 ### 播放输出
 

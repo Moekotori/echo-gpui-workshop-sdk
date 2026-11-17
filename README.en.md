@@ -124,6 +124,11 @@ Use `library.archivePlaylist(id)` for recoverable removal. Page through `library
 and pass the selected record to `library.restorePlaylistRecovery(record)`. See the [playlist guide](README.md#编辑与恢复歌单)
 for the scope of offline fixtures and the live host.
 
+`library.smart.previewSummary(rules)` returns candidate and included counts with up to 100 preview tracks.
+Pass `{ title }` to `library.smart.freeze(id, options)` to name the resulting manual playlist.
+Original API 2 plugins can also read, preview, create, update, and freeze smart playlists.
+Path and folder predicates require `library:path`. Skip history predicates are unavailable for the GPUI local library.
+
 ### Playback and output
 
 `playback.getRate()` and `setRate(rate)` read and change speed from 0.5× to 2× in hundredth steps.

@@ -340,6 +340,13 @@ export interface SmartRules {
     sorts?: { field: SmartField; direction: 'asc' | 'desc' }[] | null;
     albumSource?: Json;
 }
+export interface SmartPreviewSummary {
+    items: CatalogEntry[];
+    candidateCount: number;
+    includedCount: number;
+    requestedLimit: number;
+    hasMore: boolean;
+}
 export type PlaybackMode = 'Sequential' | 'Shuffle' | 'RepeatOne' | 'RepeatAll';
 export type RepeatMode = 'off' | 'one' | 'all';
 export interface PlaybackSnapshot {
@@ -516,9 +523,10 @@ export interface WorkshopContext {
         readonly smart: {
             rules(id: string, source?: CatalogSource): Promise<SmartRules>;
             preview(rules: SmartRules, page?: number): Promise<CatalogPage>;
+            previewSummary(rules: SmartRules): Promise<SmartPreviewSummary>;
             create(title: string, rules: SmartRules): Promise<{ id: string }>;
             update(id: string, title: string, rules: SmartRules): Promise<{ id: string }>;
-            freeze(id: string): Promise<{ id: string; title: string; count: number }>;
+            freeze(id: string, options?: { title?: string }): Promise<{ id: string; title: string; count: number }>;
         };
     };
     readonly history: {
