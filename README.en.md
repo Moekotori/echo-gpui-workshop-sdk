@@ -38,9 +38,13 @@ echo-gpui --workshop init my-plugin community.yourname.my-plugin
 cd my-plugin
 echo-gpui --workshop check
 echo-gpui --workshop test
+echo-gpui --workshop test . now-playing
 echo-gpui --workshop pack my-plugin-0.1.0.zip
 echo-gpui --workshop test my-plugin-0.1.0.zip
 ```
+
+The starter registers `now-playing`. Passing its ID to `test` prints the command's JSON result.
+Native commands can also take a JSON argument after the command ID.
 
 Use [the manifest schema](schemas/manifest.schema.json) for editor validation and
 [`echo-workshop.d.ts`](starter/echo-workshop.d.ts) for API signatures. A GPUI plugin sets `gpui.protocol`
@@ -58,6 +62,9 @@ Use `playback.getCurrentTrack()` to read the current track and its catalog ID, a
 to receive playback snapshots. The subscription returns a function that stops delivery.
 `audio.output.getStatus()` reports the selected route, configured local output, and the active local Audio Host format,
 when available. Use `audio.output.listDevices()` when opening or refreshing a local device list.
+Use `audio.output.setOutput({ target: { kind: 'device', id } })` when the user selects a device.
+The accepted local configuration is returned. See the [output guide](README.md#播放输出) for system defaults,
+automatic output, mode, and latency settings.
 Check `host.describe` for the corresponding commands when targeting older hosts.
 
 ## Publish

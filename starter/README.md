@@ -14,7 +14,8 @@ in ECHO. Rust, Cargo, npm, and a build step are unnecessary for this project.
 
 From this folder, run `echo-gpui --workshop check` to validate the manifest,
 `echo-gpui --workshop test` to run your plugin with a temporary library, or
-`echo-gpui --workshop dev` to rerun that check each time you save a file in `content`.
+`echo-gpui --workshop dev` to rerun that check each time you save a file in the package.
+Run `echo-gpui --workshop test . now-playing` to print the result of the starter's registered command.
 
 The bundled `echo-workshop.d.ts` gives TypeScript-aware editors completions in the JavaScript
 source. A TypeScript project can compile to an `.mjs` entry and point `gpui.entry` to it.
@@ -36,6 +37,7 @@ npm 或编译步骤。
 
 在项目目录运行 `echo-gpui --workshop check` 校验清单，运行 `echo-gpui --workshop test`
 用临时曲库启动插件，或运行 `echo-gpui --workshop dev` 在每次保存包目录内的文件后重跑验证。
+用 `echo-gpui --workshop test . now-playing` 可直接运行示例注册的命令并查看 JSON 结果。
 
 随附的 `echo-workshop.d.ts` 为支持 TypeScript 的编辑器提供 JavaScript 补全。使用 TypeScript
 开发时，在清单里用 `gpui.entry` 指定编译后的 `.mjs` 入口。接口、进阶示例和发布步骤见

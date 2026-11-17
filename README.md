@@ -48,6 +48,9 @@ echo-gpui --workshop dev
   项目目录本身含有清单时优先使用该清单，否则查找 `content/echo.workshop.json`。
 - `check` 校验清单、协议和入口路径。`test` 在临时曲库中用与桌面端相同的宿主启动插件，
   列出已注册贡献并校验页面。Node 的日志和错误堆栈直接显示在终端。
+- 用 `echo-gpui --workshop test . now-playing` 运行 starter 注册的命令并打印 JSON 结果。
+  可在命令 ID 后传一个 JSON 参数，例如 `'{"title":"Echo"}'`。省略时传入 `null`。
+  原版命令仍用 `test . <命令 ID>` 和原版动作表单的默认值。
 - `dev` 监听包目录，每次保存后启动新进程重跑 `test`，同一会话内保留临时插件数据。
   用 Ctrl+C 退出。
 - `test` 和 `dev` 会执行插件代码，只对自己信任的包运行。打包版使用随附的 Node.js。
@@ -379,6 +382,12 @@ export function dispose() {
 可从 `active.name` 读取。没有本机输出读数时，`active` 为 `null`。
 `context.audio.output.listDevices()` 在后台探测本机设备，适合在用户打开设备列表或点刷新时调用。
 专用后端设备附带 `dedicatedMode`，设备探测失败时调用会抛错。
+
+在用户主动选择输出时，可调用 `context.audio.output.setOutput(change)`。传
+`{target: {kind: 'device', id}}` 选择设备，`{target: {kind: 'systemDefault'}}` 使用系统默认设备，
+或传 `{target: {kind: 'automatic'}}` 恢复自动输出。手动设置可附带 `mode` 和 `latencyProfile`。
+只设置模式或延迟时会沿用当前设备并切换到手动配置。宿主会核对设备和后端，
+成功后返回应用的配置。DLNA 和 HQPlayer 播放期间，修改的是之后使用的本机输出配置。
 
 ```js
 const { commands } = await context.hostInvoke('host.describe');

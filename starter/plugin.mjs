@@ -7,6 +7,10 @@
 export function activate(context) {
     console.info(`Activating ${context.pluginId}`);
     context.pages.register('home', { title: 'My plugin' }, () => home(context));
+    context.commands.register('now-playing', { title: 'Now playing' }, async () => {
+        const { title, artist } = await context.playback.get();
+        return { title, artist };
+    });
 }
 
 /** @param {WorkshopRequest} request @param {WorkshopContext} context */

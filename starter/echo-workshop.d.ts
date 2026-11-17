@@ -321,15 +321,23 @@ export interface AudioOutputDevice {
     isDefault: boolean;
     dedicatedMode: AudioOutputMode | null;
 }
+export interface ConfiguredAudioOutput {
+    mode: AudioOutputMode;
+    automatic: boolean;
+    device: AudioOutputDevice | null;
+    latencyProfile: 'lowLatency' | 'balanced' | 'stable';
+}
+export type AudioOutputChange =
+    | { target: { kind: 'automatic' }; mode?: never; latencyProfile?: never }
+    | {
+        target?: { kind: 'systemDefault' } | { kind: 'device'; id: string };
+        mode?: AudioOutputMode;
+        latencyProfile?: ConfiguredAudioOutput['latencyProfile'];
+    };
 export interface AudioOutputStatus {
     status: PlaybackSnapshot['status'];
     route: 'local' | 'dlna' | 'hqplayer';
-    configured: {
-        mode: AudioOutputMode;
-        automatic: boolean;
-        device: AudioOutputDevice | null;
-        latencyProfile: 'lowLatency' | 'balanced' | 'stable';
-    };
+    configured: ConfiguredAudioOutput;
     /** Local Audio Host report when available. Remote routes and an unopened output return null. */
     active: {
         mode: AudioOutputMode;
@@ -449,6 +457,8 @@ export interface WorkshopContext {
         readonly output: {
             getStatus(): Promise<AudioOutputStatus>;
             listDevices(): Promise<AudioOutputDevice[]>;
+            /** Apply a local route change and return the accepted configuration. */
+            setOutput(change: AudioOutputChange): Promise<ConfiguredAudioOutput>;
         };
     };
     readonly queue: {
