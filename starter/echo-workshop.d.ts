@@ -535,6 +535,35 @@ export interface DspGraph {
     procedural: { [key: string]: Json };
 }
 
+export interface StorageBudget {
+    maxEntries: number;
+    maxBytes: number;
+}
+
+export interface WorkshopRecord {
+    value: Json;
+    summary: Json;
+    revision: number;
+}
+
+export interface RecordStorage {
+    get(bucket: string, key: string): Promise<WorkshopRecord | null>;
+    list(bucket: string, options: { limit: number; before?: number }): Promise<{
+        items: { key: string; summary: Json; revision: number }[];
+        nextCursor: number | null;
+    }>;
+    /** Pass null to create only, or an existing revision to conditionally replace it. */
+    set(bucket: string, key: string, value: Json, summary: Json, budget: StorageBudget, expectedRevision?: number | null): Promise<{ revision: number }>;
+    remove(bucket: string, key: string, expectedRevision?: number | null): Promise<null>;
+}
+
+export interface CacheStorage {
+    get(bucket: string, key: string): Promise<Json>;
+    /** expiresAt is an absolute Unix timestamp in milliseconds. */
+    set(bucket: string, key: string, value: Json, budget: StorageBudget & { expiresAt: number; ifAbsent?: boolean }): Promise<boolean>;
+    remove(bucket: string, key: string): Promise<null>;
+}
+
 export interface WorkshopContext {
     readonly pluginId: string;
     readonly contentRoot: string;
@@ -543,6 +572,8 @@ export interface WorkshopContext {
     hostInvoke(method: string, input?: Json): Promise<Json>;
     onEvent(listener: (event: string, value: Json) => Awaitable<void>): () => void;
     readonly storage: {
+        readonly records: RecordStorage;
+        readonly cache: CacheStorage;
         get(key: string): Promise<Json>;
         set(key: string, value: Json): Promise<void>;
         remove(key: string): Promise<void>;

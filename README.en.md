@@ -75,6 +75,23 @@ API 2 plugins use `echo.library.getSummary()`, `getAlbum(id)`, `getAlbumForTrack
 with `library:read`. Searching by file path or folder requires `library:path`.
 The search response omits local file paths.
 
+### Private records and cache
+
+Use `context.storage.records` for durable JSON records. `set(bucket, key, value, summary, budget, expectedRevision?)`
+returns the new revision. Pass `null` to create only, the current revision for a conditional update, or omit it
+to write unconditionally. Conditional writes and deletes can return `record-conflict`. Each budget has
+`maxEntries` and `maxBytes`. `list(bucket, { limit, before })` returns at most 50 summaries per page.
+Pass the prior `nextCursor` as `before`. Summaries accept up to 2 KiB.
+
+Use `context.storage.cache` for reusable results. `cache.set(bucket, key, value, { maxEntries, maxBytes, expiresAt })`
+takes an absolute Unix timestamp in milliseconds. Adding a value removes expired entries and evicts least recently
+used entries to meet both budgets. Add `ifAbsent: true` to preserve an existing unexpired value.
+
+Original API 2 plugins use `echo.storage.records` and `echo.storage.cache` with `fs:plugin`. The
+`echo.storage.files` namespace also provides private get, set, remove, records and cache within the
+GPUI-managed plugin directory. Existing GPUI key-value entries keep their previous storage.
+For secrets, use `context.credentials`. Verify persistence across restarts in the installed host.
+
 ### Playback controls and DSP
 
 `context.playback.getSpeed()` and `setSpeed(rate, mode)` read and update the speed and mode

@@ -533,6 +533,22 @@ export function dispose() {
 原版插件可用 `echo.lyrics.get(trackId?)` 读取当前曲目或指定本机曲目的已保存歌词，需要 `lyrics:read`。
 返回内容包括结构化歌词行、可用的逐字时间以及单独的偏移量。
 
+### 插件记录和缓存
+
+`context.storage.records` 按 bucket 保存 JSON。`set(bucket, key, value, summary, budget, expectedRevision?)`
+返回新版本号。传 `null` 只允许新建，传已有版本号可做条件更新，省略版本号则直接写入。
+版本冲突返回 `record-conflict`。`budget` 包含 `maxEntries` 与 `maxBytes`。
+`list(bucket, { limit, before })` 每页最多读 50 条摘要，下一页的 `before` 用上一页的 `nextCursor`。
+每条摘要最多 2 KiB。
+
+`context.storage.cache` 用于保存可重算的结果。写入时指定 `maxEntries`、`maxBytes` 与
+`expiresAt`，过期时间使用 Unix 毫秒时间戳。写入会清理过期项，并按最近使用顺序淘汰旧数据。
+用 `ifAbsent: true` 保留已有的未过期项。
+
+原版插件声明 `fs:plugin` 后可使用 `echo.storage.records`、`echo.storage.cache` 和
+`echo.storage.files`。`files` 使用 GPUI 管理的插件私有目录，提供键值、记录与缓存接口。
+已有 GPUI 键值数据沿用原位置。敏感凭据用 `context.credentials`，跨重启持久化可在应用内验证。
+
 ### 播放控制、频谱与 DSP
 
 `context.playback.getSpeed()` 和 `setSpeed(rate, mode)` 一起读取和设置播放速度与模式。

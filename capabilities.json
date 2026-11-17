@@ -81,7 +81,14 @@
     "queue.submit",
     "credentials.get",
     "credentials.set",
-    "credentials.remove"
+    "credentials.remove",
+    "storage.records.get",
+    "storage.records.set",
+    "storage.records.list",
+    "storage.records.remove",
+    "storage.cache.get",
+    "storage.cache.set",
+    "storage.cache.remove"
   ],
   "events": [
     "playback.changed",
@@ -212,7 +219,24 @@
       "queue:reorder",
       "sleep-timer:cancel",
       "sleep-timer:getStatus",
-      "sleep-timer:start"
+      "sleep-timer:start",
+      "storage:cache:get",
+      "storage:cache:remove",
+      "storage:cache:set",
+      "storage:file:cache:get",
+      "storage:file:cache:remove",
+      "storage:file:cache:set",
+      "storage:file:get",
+      "storage:file:records:get",
+      "storage:file:records:list",
+      "storage:file:records:remove",
+      "storage:file:records:set",
+      "storage:file:remove",
+      "storage:file:set",
+      "storage:records:get",
+      "storage:records:list",
+      "storage:records:remove",
+      "storage:records:set"
     ],
     "runnerActions": [
       "storage:get",
