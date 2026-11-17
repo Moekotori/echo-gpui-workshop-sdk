@@ -59,6 +59,22 @@ for support, permission and availability in their current session. Check `availa
 Legacy event handlers can subscribe with `echo.events.on(name, handler)`. The runtime `getCapabilities().events` lists subscribed-eligible events for the current permissions.
 Native plugins can use `library.onFavoritesChanged(handler)` when only local favorite changes matter.
 
+### Local catalog lookup and rule search
+
+Use `context.library.summary()`, `album(id)`, `albumForTrack(trackId)`, and `artist(id)`
+to read local catalog data by ID. `albumFavoriteStates(ids)` accepts up to 200 album IDs
+and returns a Boolean for each ID. Missing albums return `false`.
+
+`context.library.searchTracks(rules, { page, pageSize })` searches matching tracks by
+smart-playlist rules and returns `{ items, page, pageSize, total, hasMore }`. Pages start at
+1 and hold up to 100 tracks. Search covers every matching candidate independently of the
+saved playlist limit. Use the installed host to test rule queries with your library.
+
+API 2 plugins use `echo.library.getSummary()`, `getAlbum(id)`, `getAlbumForTrack(trackId)`,
+`getArtist(id)`, `favorites.getAlbumStates(ids)`, and `searchTracks({ rules }, { page, pageSize })`
+with `library:read`. Searching by file path or folder requires `library:path`.
+The search response omits local file paths.
+
 ### Sleep timer, tags, and lyrics
 
 Native plugins can call `context.sleepTimer.getStatus()`, `start({ durationMinutes, action, fadeOut })`,

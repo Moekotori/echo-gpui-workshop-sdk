@@ -474,6 +474,40 @@ export interface SleepTimerStatus {
     fadeOutEnabled: boolean;
 }
 
+export interface LocalCatalogSummary {
+    trackCount: number;
+    albumCount: number;
+    artistCount: number;
+    totalDurationSeconds: number;
+}
+
+export interface LocalCatalogAlbum {
+    id: string;
+    title: string;
+    albumArtist: string;
+    trackCount: number;
+    durationSeconds: number;
+    year: number | null;
+    addedAt: string | null;
+    rating: number | null;
+}
+
+export interface LocalCatalogArtist {
+    id: string;
+    name: string;
+    role: 'trackArtist' | 'albumArtist';
+    trackCount: number;
+    albumCount: number;
+}
+
+export interface TrackSearchPage {
+    items: CatalogEntry[];
+    page: number;
+    pageSize: number;
+    total: number;
+    hasMore: boolean;
+}
+
 export interface WorkshopContext {
     readonly pluginId: string;
     readonly contentRoot: string;
@@ -503,6 +537,13 @@ export interface WorkshopContext {
         onFavoritesChanged(listener: (event: LibraryChange) => Awaitable<void>): () => void;
         query(options?: CatalogQuery): Promise<CatalogPage>;
         track(id: string, source?: CatalogSource): Promise<CatalogEntry>;
+        summary(): Promise<LocalCatalogSummary>;
+        album(id: string): Promise<LocalCatalogAlbum | null>;
+        albumForTrack(trackId: string): Promise<LocalCatalogAlbum | null>;
+        artist(id: string): Promise<LocalCatalogArtist | null>;
+        albumFavoriteStates(ids: string[]): Promise<Record<string, boolean>>;
+        /** Searches all candidates. A smart playlist's saved result limit does not cap search pages. */
+        searchTracks(rules: SmartRules, page?: { page?: number; pageSize?: number }): Promise<TrackSearchPage>;
         /** Returns found local tracks in input order, with duplicates removed. */
         tracksByIds(ids: string[]): Promise<CatalogEntry[]>;
         /** Recorded local catalog skips and the latest skip's UTC timestamp. */

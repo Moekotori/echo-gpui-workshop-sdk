@@ -494,6 +494,21 @@ export function dispose() {
 恢复记录，并将选中的记录传给 `library.restorePlaylistRecovery(record)`，记录的 `kind` 和 `id`
 共同定位恢复项。桌面端可恢复已归档的歌单、曲目变更或云端快照。离线预览提供一个示例歌单。
 
+### 本机曲库详情与规则搜索
+
+用 `context.library.summary()` 读取本机曲库汇总，用 `album(id)`、`albumForTrack(trackId)`
+或 `artist(id)` 按 ID 读详情。`albumFavoriteStates(ids)` 一次查询最多 200 张专辑的收藏状态，
+不存在的专辑返回 `false`。
+
+`context.library.searchTracks(rules, { page, pageSize })` 用智能歌单规则查询曲目，返回
+`{ items, page, pageSize, total, hasMore }`。页码从 1 开始，每页最多 100 首，范围覆盖规则匹配的全部曲目。
+可用已安装的 GPUI 宿主在自己的曲库里验查询。
+
+原版插件声明 `library:read` 后可用 `echo.library.getSummary()`、`getAlbum(id)`、
+`getAlbumForTrack(trackId)`、`getArtist(id)`、`favorites.getAlbumStates(ids)`
+和 `searchTracks({ rules }, { page, pageSize })`。按文件路径或文件夹筛选额外需要 `library:path`，
+返回的曲目字段省略本机路径。
+
 ### 智能歌单预览
 
 `library.trackSkipStats(id)` 返回本机曲目的 `skipCount` 和最近跳过时间 `lastSkippedAt`。
