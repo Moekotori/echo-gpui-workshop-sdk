@@ -478,6 +478,8 @@ export interface WorkshopContext {
         onChanged(listener: (event: LibraryChange) => Awaitable<void>): () => void;
         query(options?: CatalogQuery): Promise<CatalogPage>;
         track(id: string, source?: CatalogSource): Promise<CatalogEntry>;
+        /** Recorded local catalog skips and the latest skip's UTC timestamp. */
+        trackSkipStats(id: string): Promise<{ skipCount: number; lastSkippedAt: string | null }>;
         albums(options?: CatalogPageOptions): Promise<CatalogPage>;
         albumTracks(id: string, options?: CatalogPageOptions): Promise<CatalogPage>;
         artists(options?: CatalogPageOptions): Promise<CatalogPage>;

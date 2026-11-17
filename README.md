@@ -222,6 +222,10 @@ echo-gpui --workshop release-feed my-plugin-1.2.0.zip https://plugins.example.co
 `name`，宿主会一起校验。声明 `audio:output-write` 后可用 `setOutput(settings)` 切换自动输出、
 默认或指定设备、可用的输出模式及延迟档位。手动指定采样率、缓冲帧数和设备音量控制仍需适配。
 
+原版插件声明 `library:read` 后，可查询曲目、专辑、艺人和流派，也能通过这些 ID 查询关联曲目或专辑。
+查询支持 `page`、`pageSize`、搜索、常用排序与格式筛选。GPUI 返回本机索引的元数据；远端提供器查询和
+未映射的筛选选项会报错。收藏的歌曲和专辑可分页读取，`favorites.setTrack` 和 `setAlbum` 使用 `library:control`。
+
 原版插件可用 `library:read` 读取本机普通歌单的 `echo.library.playlists.getItems(id, { page, pageSize })`，
 并用 `library:control` 调用 `removeItems`。原版的 `playlists.delete` 需要单独声明
 `library:playlist-delete`，删除的歌单保留在 GPUI 恢复列表里。
@@ -231,7 +235,7 @@ echo-gpui --workshop release-feed my-plugin-1.2.0.zip https://plugins.example.co
 大量歌单请用 `playlists.list` 分页，条目接口按存储顺序返回。
 原版智能歌单可用 `playlists.getRules`、`previewRules`、`createSmart`、`updateRules` 和 `freeze`。
 读取和预览需要 `library:read`，创建、更新和固定需要 `library:control`。路径和文件夹规则另需
-`library:path`。GPUI 本机曲库暂不支持按跳过次数或最后跳过时间筛选，相关条件会返回错误。
+`library:path`。新版宿主支持本机跳过次数和最后跳过时间。
 
 原版包沿用 GPUI 的安装版本授权。经典脚本与原生插件在相同权限的 Node 子进程中运行，
 只启用自己信任的来源。
@@ -472,6 +476,10 @@ export function dispose() {
 共同定位恢复项。桌面端可恢复已归档的歌单、曲目变更或云端快照。离线预览提供一个示例歌单。
 
 ### 智能歌单预览
+
+`library.trackSkipStats(id)` 返回本机曲目的 `skipCount` 和最近跳过时间 `lastSkippedAt`。
+智能歌单可按 `skipCount`、`lastSkipped` 和 `filters.minSkipCount` 筛选或排序。
+跳过统计从新版记录的队列切换事件开始，旧历史保留原有字段。
 
 `library.smart.previewSummary(rules)` 返回候选数、纳入数、请求上限与最多 100 首样本。
 需要更多预览曲目时，可用 `library.smart.preview(rules, page)` 翻页。

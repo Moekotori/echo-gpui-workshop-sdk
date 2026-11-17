@@ -108,6 +108,10 @@ available modes and latency profiles. Pass the index and name from the latest de
 
 ### Playlist editing and recovery
 
+Original API 2 plugins with `library:read` can browse tracks, albums, artists, genres, their related collections,
+and favorites in the local index. Common search, sort, and format filters are supported. Unmapped filters and
+remote-provider queries report an error. Use `library:control` to set track or album favorites.
+
 Use `library.playlistSummaries({ search, page, pageSize })` and `library.playlistSummary(id)` to read local playlist metadata.
 `library.createPlaylistWithDetails({ title, description })` saves both fields together.
 `library.prependPlaylistTracks(id, trackIds)` inserts new tracks at the beginning and returns the added entries.
@@ -127,7 +131,8 @@ for the scope of offline fixtures and the live host.
 `library.smart.previewSummary(rules)` returns candidate and included counts with up to 100 preview tracks.
 Pass `{ title }` to `library.smart.freeze(id, options)` to name the resulting manual playlist.
 Original API 2 plugins can also read, preview, create, update, and freeze smart playlists.
-Path and folder predicates require `library:path`. Skip history predicates are unavailable for the GPUI local library.
+Path and folder predicates require `library:path`. Local skip predicates use queue changes recorded by the newer host.
+`library.trackSkipStats(id)` returns the recorded count and latest skip time.
 
 ### Playback and output
 
