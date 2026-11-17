@@ -564,6 +564,30 @@ export interface CacheStorage {
     remove(bucket: string, key: string): Promise<null>;
 }
 
+export type LyricsDocumentFormat = 'lrc' | 'ttml' | 'txt';
+
+export interface WorkshopTrackLyrics {
+    kind: 'empty' | 'plain' | 'synced' | 'instrumental';
+    title: string;
+    artist: string;
+    album: string | null;
+    durationSeconds: number | null;
+    offsetMs: number;
+    provider: 'none' | 'local' | 'manual' | 'remote';
+    plainText: string | null;
+    syncedText: string | null;
+    lines: (Omit<LyricLine, 'timeMs' | 'endMs'> & {
+        timeMs: number;
+        endMs?: number;
+        agentId?: string;
+        kana: string | null;
+        backgroundVocals?: {
+            text: string; timeMs: number; endMs: number | null; agentId?: string;
+            translation: string | null; words: LyricLine['words'];
+        }[];
+    })[];
+}
+
 export interface WorkshopContext {
     readonly pluginId: string;
     readonly contentRoot: string;
@@ -582,6 +606,14 @@ export interface WorkshopContext {
         get(key: string): Promise<string | null>;
         set(key: string, value: string): Promise<null>;
         remove(key: string): Promise<null>;
+    };
+    readonly lyrics: {
+        get(trackId?: string): Promise<WorkshopTrackLyrics | null>;
+        applyCustom(trackId: string, text: string, format?: LyricsDocumentFormat): Promise<WorkshopTrackLyrics>;
+        setOffset(trackId: string, offsetMs: number): Promise<WorkshopTrackLyrics>;
+        setCurrentOffset(offsetMs: number): Promise<WorkshopTrackLyrics>;
+        markInstrumental(trackId: string): Promise<WorkshopTrackLyrics>;
+        clearOverride(trackId: string): Promise<null>;
     };
     readonly sleepTimer: {
         getStatus(): Promise<SleepTimerStatus>;

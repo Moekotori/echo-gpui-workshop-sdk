@@ -519,7 +519,7 @@ export function dispose() {
 需要更多预览曲目时，可用 `library.smart.preview(rules, page)` 翻页。
 `library.smart.freeze(id, { title })` 可指定生成的普通歌单名称，省略时沿用默认名称。
 
-### 睡眠定时器、标签与歌词
+### 睡眠定时器与标签
 
 原生插件使用 `context.sleepTimer.getStatus()`、`start({ durationMinutes, action, fadeOut })`、`cancel()`
 和 `onTick(({ remainingMs }) => ...)`，与播放器共用定时器。时长接受 1–720 分钟的整数，动作可选
@@ -530,8 +530,16 @@ export function dispose() {
 原版插件可用 `echo.library.tags.list(target?)`、`getItems(tagId, page?)` 和 `change(edit)`。
 读取需要 `library:read`，修改需要 `library:personal-write`。
 
-原版插件可用 `echo.lyrics.get(trackId?)` 读取当前曲目或指定本机曲目的已保存歌词，需要 `lyrics:read`。
-返回内容包括结构化歌词行、可用的逐字时间以及单独的偏移量。
+### 编辑本机曲目歌词
+
+用 `context.lyrics.get(trackId?)` 读取当前曲目或指定本机曲目的歌词。
+`applyCustom(trackId, text, format)` 支持 LRC、TTML 和纯文本，`markInstrumental(trackId)` 可标记纯音乐。
+用 `setOffset(trackId, offsetMs)` 或 `setCurrentOffset(offsetMs)` 调整时序。保存范围为 ±10 秒，
+返回值把偏移量与原始歌词时间分开。`clearOverride(trackId)` 恢复默认取词并保留偏移，
+编辑保存到 GPUI 曲库歌词覆盖，音频文件标签保持原样。
+
+原版插件用 `echo.lyrics` 调用同一组能力，其中恢复默认取词用 `clearCache(trackId)`。
+读取需 `lyrics:read`，编辑需 `lyrics:write`。歌词写入可用已安装宿主与本机曲目验证。
 
 ### 插件记录和缓存
 

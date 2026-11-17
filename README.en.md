@@ -75,6 +75,19 @@ API 2 plugins use `echo.library.getSummary()`, `getAlbum(id)`, `getAlbumForTrack
 with `library:read`. Searching by file path or folder requires `library:path`.
 The search response omits local file paths.
 
+### Edit local track lyrics
+
+Read the current track or a local track with `context.lyrics.get(trackId?)`. Apply an LRC, TTML, or
+plain-text document with `applyCustom(trackId, text, format)`. Use `setOffset(trackId, offsetMs)`
+or `setCurrentOffset(offsetMs)` for track timing. The host clamps the stored offset to ±10 seconds
+and returns it separately from the lyric timestamps. `markInstrumental(trackId)` suppresses lyrics.
+
+`clearOverride(trackId)` restores the normal lyric source lookup and preserves the saved offset.
+These edits update the GPUI library override and retain the original media file tags.
+Original API 2 plugins use the same operations through `echo.lyrics`, with `clearCache(trackId)`
+for reset. A plugin declares `lyrics:read` for reads and `lyrics:write` for edits.
+Use the installed host to test edits with a local track.
+
 ### Private records and cache
 
 Use `context.storage.records` for durable JSON records. `set(bucket, key, value, summary, budget, expectedRevision?)`
@@ -111,7 +124,7 @@ Rack orders preserve filter instances. Importing or editing convolution bank ref
 API 2 uses `audio:dsp-read` for reads, `audio:dsp-read` and `audio:dsp-graph-write` for graph updates,
 and `audio:dsp-write` for order changes. `listModules()` lists built-in modules this host can read.
 
-### Sleep timer, tags, and lyrics
+### Sleep timer and tags
 
 Native plugins can call `context.sleepTimer.getStatus()`, `start({ durationMinutes, action, fadeOut })`,
 `cancel()`, and `onTick(({ remainingMs }) => ...)`. The timer is shared with the player. Start accepts
@@ -122,10 +135,6 @@ Offline preview updates its timer fixture on start and cancel. Verify the countd
 `context.library.tags.mixedItems(tagId, page)` returns a 30-item page across albums, artists, and tracks.
 API 2 plugins can use `echo.library.tags.list(target?)`, `getItems(tagId, page?)`, and `change(edit)`.
 Reads require `library:read` and changes require `library:personal-write`.
-
-API 2 plugins can use `echo.lyrics.get(trackId?)` with `lyrics:read` to read saved lyrics for a local
-track or the current track. The response includes structured lines, word timing where present, and
-a separate offset. The playback stack resolves lyrics through the normal local lyric loader.
 
 ### Preview with example data
 
