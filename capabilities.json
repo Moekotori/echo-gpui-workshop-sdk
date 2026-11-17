@@ -93,6 +93,8 @@
       "audio:output:listDevices",
       "audio:output:refreshDevices",
       "audio:output:setOutput",
+      "host:getCapabilities",
+      "host:getFeatureAvailability",
       "library:getPlaylistItems",
       "library:playlists:delete",
       "library:removePlaylistItems",
@@ -110,6 +112,13 @@
       "playback:setVolume",
       "playback:stop",
       "playback:toggleShuffle"
+    ],
+    "runnerActions": [
+      "storage:get",
+      "storage:remove",
+      "storage:set",
+      "trusted:invoke",
+      "ui:notify"
     ]
   }
 }

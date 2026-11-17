@@ -92,7 +92,11 @@ node sdk.mjs capabilities
 
 迁移原版脚本时，可运行 `node sdk.mjs capabilities --original-catalog path/to/capability-catalog.json`，
 将原版 SDK 的公开动作 ID 与 GPUI 原版 Bridge 分发器做对照。结果只统计直接分发，
-单独走运行器、网络或主题扩展的能力不在匹配结果里。权限被接受后，仍需逐项核对用到的动作。
+单独走运行器、网络或主题扩展的能力不在匹配结果里。公开清单的 `original.runnerActions` 也列出已登记的运行器本地动作。
+
+在原版插件中，可调用 `echo.host.getCapabilities()` 读取本插件的动作和授权状态，或使用
+`echo.host.getFeatureAvailability('library:playlists:delete')` 检查单个动作。结果分别说明宿主是否实现、
+作品是否声明权限、以及当前是否可用。只在 `available` 为 `true` 时显示对应功能。动作仍可能因输入或设备状态失败。
 
 ### 离线运行预览
 

@@ -51,7 +51,11 @@ Device availability and permission checks still apply when a command runs.
 
 `node sdk.mjs capabilities --original-catalog path/to/capability-catalog.json` compares original API 2
 action names against the GPUI legacy Bridge dispatcher. The comparison covers direct dispatch.
-Runner-local, network-routed, and theme actions are outside its scope.
+Runner-local, network-routed, and theme actions are outside its scope. The snapshot lists registered
+runner-local actions under `original.runnerActions`.
+
+Original API 2 plugins can call `echo.host.getCapabilities()` and `echo.host.getFeatureAvailability(actionId)`
+for support, permission and availability in their current session. Check `available` before enabling a control.
 
 ### Preview with example data
 
