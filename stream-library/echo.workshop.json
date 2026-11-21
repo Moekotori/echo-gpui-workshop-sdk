@@ -1,0 +1,13 @@
+{
+  "type": "echo-workshop-item",
+  "schemaVersion": 1,
+  "id": "community.stream-library",
+  "title": "我的音源",
+  "version": "1.0.0",
+  "content": { "kind": "plugin-package" },
+  "gpui": {
+    "protocol": 1,
+    "entry": "plugin.mjs",
+    "requires": { "features": ["sources.catalog"] }
+  }
+}

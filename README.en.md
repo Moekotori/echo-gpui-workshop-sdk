@@ -2,9 +2,63 @@
 
 [中文开发指南](README.md) · [Download](https://github.com/Moekotori/echo-gpui-workshop-sdk/releases/latest)
 
+To build a player, playlist tool or music provider, start with the [standalone SDK](#standalone-applications), [provider example](#provide-music-and-commands-from-a-standalone-app) and [live discovery](#watch-available-sources-and-service-commands).
+
 Build plugins for ECHO GPUI with JavaScript and an installed copy of the app. Plugins can add native pages,
 search providers, track metadata and cover suggestions, and commands other plugins can call. Use or adapt the
 SDK files under the [MIT license](LICENSE).
+
+## Build your own native page
+
+Run `node sdk.mjs init my-shelf community.my-shelf --template cover-browser`. Open its manifest from Plugins → Create → Run development package. The [example](cover-browser/plugin.mjs) reads local playlists, filters them, renders bundled sleeve artwork, opens track details, and plays the selected track. For a fixture-backed check, run `node sdk.mjs preview my-shelf --action page.action.open`.
+
+Declare `pages.layout` in `gpui.requires.features`. Return a `WorkshopPage` with a `layout.body` node and an optional virtualized `layout.grid`. Compose rows, columns, styled text, images, fields, buttons, pressable groups, dividers and links to registered pages. Put field definitions in `fields` and reference each field once by ID. Change `layout.key` when navigating to a new view to reset scrolling. Omitting `layout` uses the existing form renderer.
+
+For a separate desktop window, declare `pages.window` and register a page with `{ title: 'Queue', window: { width: 560, height: 460 } }`. Link to it with a `pageLink` using its registered ID. Opening the same page again focuses its window. Each window owns its fields and scroll position and shares the authorized plugin process. Open and action callbacks receive the page ID as `windowId`, or `null` for main-window pages. Use `pages.invalidate(id)` to refresh a single page. Disabling the plugin closes its windows. The cover browser includes a queue window. Try `node sdk.mjs preview my-shelf --page queue --action page.action.toggle` with the offline fixture.
+
+
+The [public types](starter/echo-workshop.d.ts) describe style and action options. Supply PNG or JPEG thumbnails as named data URLs in `layout.images`. A page accepts 256 grid items, 2048 nodes, 12 levels, and up to 64 images with a combined 8,388,608 pixels. Each image must fit within 2048 × 2048 and the whole response within 1 MiB. Fetch one page of data at a time.
+
+## Music video providers
+
+Create a plugin with `node sdk.mjs init my-videos community.yourname.videos --template mv-source`. Enable it in Plugins and choose **Settings → Lyrics → Music video source**. With the lyrics MV stage open, track changes query the selected provider. The MV drawer also offers manual search and candidate selection. Local videos take priority. Approved installed providers resume on restart.
+
+Use `ctx.mv.registerProvider(id, { title }, { search, resolve, match? })` during activation. Both plugin and provider IDs identify the source. The track includes its ID, title, artist and duration in seconds. Pass the supplied abort signal to I/O.
+
+- `search({ track, query, automatic, signal })` returns up to 24 candidates with a stable ID, title and optional artist and duration in seconds.
+- Optional `match({ track, signal })` returns a confident candidate or null. Without it the host automatically selects only a unique exact title and nonempty artist match.
+- `resolve({ track, candidate, signal })` returns a final HTTPS media URL with optional `startSeconds`, `quality`, and per-stream `headers` (Authorization, Referer, User-Agent). The server must support byte ranges and HTTP 206 responses. Manual searches keep the current video until selection.
+
+The [video catalog example](mv-source/plugin.mjs) accepts a configurable HTTPS JSON array of `{ id, title, artist, url, durationSeconds? }`. Its default catalog contains the MDN Flower clip and the Blender Foundation Sintel trailer. Use the public CLI to exercise both paths:
+
+```sh
+node sdk.mjs preview mv-source --mv catalog --track '{"title":"Flower","artist":"MDN"}'
+node sdk.mjs preview mv-source --mv catalog --track '{"title":"Flower","artist":"MDN"}' --query sintel --candidate sintel
+```
+
+### Stateful MV providers
+
+Declare `gpui.requires.features: ["mv.session"]` and use `ctx.mv.registerSessionProvider(id, descriptor, handlers)` for providers that manage authentication, background matching, or stream renewal. The host calls `observe` and polls `status` while the MV stage is active. Implement search and selection in the plugin, respect the request signal, and use `ctx.credentials` for session storage. Publish a final HTTPS stream with the returned `streams.publish({trackId, url, headers?})`, then return that relay URL in the video status for the same track. Expose QR sign-in controls by providing login, closeLogin and logout callbacks. Additional capabilities include link loading, external search, quality selection, exclusions and recovery. See the [public types](starter/echo-workshop.d.ts).
+
+## Automatic LRC providers
+
+Create a project with `node sdk.mjs init my-lyrics community.yourname.lyrics --template lrc-source`, or use the [LRCLIB example](lrc-source/plugin.mjs). Run and approve it in Plugins, then select it under **Settings → Lyrics → Automatic lyrics source**. Selecting a provider enables automatic matching. Approved installed plugins resume on restart; development sessions must be started again.
+
+During activation call `context.lyrics.registerProvider(id, { title }, async ({ track, signal }) => candidates)`. Keep both plugin and provider IDs stable. Pass the abort signal to your request. Return up to 24 candidates with the catalog record’s title, artist and one of `syncedLyrics`, `karaokeLyrics`, or `plainLyrics`. Optional fields include `translationLyrics`, `romanizationLyrics`, album and duration in seconds. Instrumental records may return `instrumental: true`. The callback also receives `automatic` for automatic versus manual lookups. Return an empty array for a miss. The host scores results for tracks with a title, artist and duration, preserves existing lyrics and does not try another provider if the selected one is unavailable. Each lyric text field is limited to 512 KiB and the candidate list to 768 KiB.
+
+## Custom pages and actions
+
+Call `context.pages.register(id, { title }, open)` during activation to add a sidebar page. Selecting it opens the returned native UI in the main content area. Register each page with its own ID so users can switch between pages and revisit them with Back and Forward.
+
+Call `context.pages.registerAction(id, ({ fields, data, signal }) => ...)` during activation. Use the returned method on header buttons (`headerActions`), page buttons, row actions or a field commit. Fields are submitted as strings. Return a new page to update the view. Persist changes with `context.storage`. Existing `handle` methods keep working.
+
+Set `field.control.kind` to `choice` (1–16 labeled options), `toggle` (string value `true` or `false`) or `range` (min, max, step, optional unit). Toggle and range controls accept an optional `commit: { method, input? }`. Mark fields `advanced: true` and set the page's `advancedFieldsLabel` to group them under a disclosure. See the [LRCLIB settings page](lrc-source/plugin.mjs) and [public types](starter/echo-workshop.d.ts).
+
+Run a settings action and query the provider in the same temporary session. This example contacts LRCLIB; omit `--automatic` for a manual lookup.
+
+```sh
+node sdk.mjs preview lrc-source --action page.action.save --fields '{"limit":"2","format":"fallback","instrumental":"false"}' --lyrics synced --automatic --track '{"title":"Space Oddity","artist":"David Bowie","durationSeconds":315}'
+```
 
 ## Run your first plugin
 
@@ -22,7 +76,18 @@ playback state. CLI `test` and `dev` use a temporary library.
 | --- | --- |
 | [Starter](starter) | Native page actions and private JSON storage |
 | [Live library](live-library) | Library, playback and queue events that refresh a page |
+| [My streams](stream-library) | Save HTTP(S) audio URLs, browse groups, and play tracks from other enabled plugins. |
 | [Navidrome](navidrome) | OpenSubsonic login, search, pagination and stream resolution. Use your own server to try login and playback. |
+
+## Share a music source with other plugins
+
+Declare `"sources.catalog"` in `gpui.requires.features`. Register a provider with `sources.registerProvider(id, {title}, {search, resolve, browse})`. The optional `browse({collectionId, page, pageSize, signal})` receives `null` for the root or a previously returned collection ID. Return `{tracks, collections, hasMore}`. Each collection has a stable ID, title and kind (`album`, `playlist` or `folder`). Return at most the requested number of entries in total. Pages start at 1 and hold up to 24 entries.
+
+Use `await sources.list()` to discover enabled providers. Each descriptor contains `plugin`, `provider`, `title` and a `browse` flag. Pass a descriptor to `sources.search(source, query, {page, pageSize})` or `sources.browse(source, collectionId)`. Search-only providers remain discoverable. To queue a result, call `queue.submit({mode: 'append', tracks: [{kind: 'source', source, track}]})`. Use `play` or `playNext` for immediate or next playback.
+
+The player resolves the stream when it needs to play. Use a stable `providerTrackId` and return playable URLs and credentials only from `resolve`. Queue snapshots persist the reference and display metadata. Restored entries need the provider enabled and signed in when applicable. When connected to a matching local Core, an enabled desktop provider shares its catalog and live login session with other controllers. Queue commands target the controller’s selected zone. Stopping the provider withdraws it. Restarting it with the same IDs makes queued references playable again.
+
+For playback with the desktop closed, run `echo-server --local-core --database /path/to/library.sqlite --workshop-source community.stream-library`. Repeat the flag for additional providers. Install and approve the exact package in the workshop store beside the Core database, then stop its desktop instance before starting the Core. The Core opens the installed revision and its plugin data. Providers that need a login must restore their credentials when starting headless.
 
 ## Build and verify
 
@@ -36,7 +101,7 @@ node sdk.mjs check my-plugin
 node sdk.mjs capabilities
 ```
 
-Use `--template live-library` or `--template navidrome` to choose another starter. The offline check reads the
+Use `--template stream-library`, `--template live-library` or `--template navidrome` to choose another starter. The offline check reads the
 native GPUI manifest, validates the entry path, and checks entry syntax without running the plugin.
 Use `--workshop test` in ECHO GPUI to validate the runtime and `--workshop pack` to create the install ZIP.
 
@@ -241,6 +306,10 @@ Path and folder predicates require `library:path`. Local skip predicates use que
 
 Use `library.tracksByIds(ids)` to look up a batch of local tracks. To play a particular queue occurrence,
 pass its `occurrenceId` and the page's `queueId` to `queue.playItem`.
+Read thumbnails with `artwork.track(id, source?)`, `artwork.album(id, source?)`, or `artwork.current(sequence?)`. Each resolves to `{width, height, dataUrl}` or `null`. Assign `dataUrl` to a key in `layout.images`. Passing the current track sequence rejects a late image after a track change.
+
+Use `queue.get({offset, limit, queueId})` to read 1–256 entries on the local or independent Core. Search with `queue.search(query, {source?, remoteId?})` and pass a hit’s queue ID and zero-based index to `queue.playAt(queueId, index)`. `queue.saved.list()` returns saved queue summaries with string IDs. Save, restore or remove using `queue.saved.save(queueId)`, `queue.saved.restore(queueId, snapshotId)` and `queue.saved.remove(snapshotId)`. Call `list()` on first open and subscribe with `queue.saved.onChanged(listener)` for later changes. The event supplies `snapshots` and `undoRemoveId`. Pass that ID to `queue.saved.undoRemove(id)` to undo the last deletion. For a runnable example, preview the live-library template with `--command inspect-session --input '{"query":"first"}'`.
+
 Original API 2 queue reads use `queue:read`; editing, enqueueing and playing use `queue:control`.
 Reuse the latest page's `sessionId` and `revision` to detect changes across pages.
 
@@ -260,8 +329,9 @@ Check `host.describe` for the corresponding commands when targeting older hosts.
 ## Publish
 
 - **ZIP** — Share the packed ZIP. Users can drop it into Plugins or select it under **Installed → Install or import file**.
-- **Steam Workshop** — In **Plugins → Create**, select the ZIP or manifest and a PNG, JPEG or GIF preview under
-  1 MiB. Publish privately first and verify the item in Steam. Reuse the same Steam account and plugin ID to update the item.
+- **Steam Workshop** — Connect Steam, open **Plugins → Create → Choose project folder** and select your SDK project. You can also use the upload button on an open development project, or choose a ZIP or manifest.
+  For the first upload, ECHO looks for `preview.png`, `preview.jpg`, `preview.jpeg` or `preview.gif` (under 1 MiB) in the project root or package. If none is found, choose an image. Confirm visibility to publish.
+  For an update, bump the manifest version and keep the plugin ID. Use the same Steam account on the machine holding the publication receipt. Check the item number and choose **Update content** to keep its Steam preview and visibility, or change both in the dialog.
 - **Independent install link** — Set `gpui.updateFeed` to your public HTTPS release JSON before packing. Keep this
   URL and the plugin ID across versions. Run `echo-gpui --workshop release-feed my-plugin-0.1.0.zip <https-zip-url>`.
   Upload the ZIP first, then publish the generated JSON. Users can paste the JSON URL into **Installed → Install from link**.
@@ -269,3 +339,63 @@ Check `host.describe` for the corresponding commands when targeting older hosts.
 
 Report bugs or request SDK capabilities in [GitHub Issues](https://github.com/Moekotori/echo-gpui-workshop-sdk/issues).
 Include the ECHO GPUI version, platform, a minimal manifest and the relevant log. Remove credentials and private library data.
+
+### Expose a service to other players
+
+Start an installed plugin whose current version has been approved with
+`echo-server --local-core --database /path/to/library.sqlite --workshop-plugin community.playlist-service`.
+Repeat the option for additional services. Plugins start in argument order. The existing
+`--workshop-source` option also checks that the plugin registered a music provider.
+
+Register your own JSON commands using `context.commands.register`. Other plugins can call
+`context.commands.core.list()` to discover them and `context.commands.core.invoke(pluginId, commandId, input)`
+to run them. The handler receives the caller's plugin ID and runs in the service's playback zone.
+These APIs also work in single-process mode. The existing `commands.list/invoke` address the caller's host.
+
+The `playlist-service` template stores ordered playlists of up to 256 reusable references in plugin records.
+Send `save` a payload such as `{id, title, tracks}`. Read back `{value, summary, revision}` with
+`get({id})` and submit `value.tracks` to the client's own queue. Pass the revision to replace or
+remove a playlist. The `list` command accepts `{limit, before?}` and returns `items` and `nextCursor`.
+Read references from `queue.get().items`, `playback.getCurrentTrack()` or a track-change event.
+A row's `reference` is a catalog or registered-source item ready for `queue.submit`. Transient
+rows return null and older hosts may omit the field. Preserve order and duplicates when saving.
+
+A native app can use the workspace's Rust `echo-client` crate directly. Construct
+`echo_client::Client::new(database_path)` with the local Core's database path, then call
+`list_workshop_commands().await` and `invoke_workshop_command(caller_id, plugin_id, command_id, input).await`
+over same-user IPC. Give your app its own stable caller ID.
+
+Shell scripts can discover and invoke services with `echo-corectl`. Both commands print JSON.
+
+```sh
+echo-corectl /path/to/library.sqlite workshop list
+echo-corectl /path/to/library.sqlite workshop invoke community.playlist-service list '{"limit":25}'
+```
+
+### Standalone applications
+
+Import `createCoreClient` from `./standalone/core.mjs` in a Node application. TypeScript declarations ship alongside it. Provide `{database, appId, zone}` and use the controller in the platform SDK archive, put the matching `echo-corectl` on PATH, or pass its path as `executable` or `ECHO_CORECTL`. Build the native programs with `cargo build --release -p echo-server -p echo-client --bins`.
+
+Call `await core.describe()` for the running Core's command list and limits. Use `core.invoke(method, input)` for library, playlists, history, tags, lyrics, artwork, playback, queue, output and DSP operations. Each command uses its existing Workshop input schema and entitlement checks. The client also provides typed source browsing and search, queue reads and submission, playback control, and plugin-service calls. Plugin handlers see the caller as `app/<appId>`. Plugin-private credentials and storage belong to the plugin runtime.
+
+`for await (const snapshot of core.watch({signal}))` delivers an initial state followed by updates for the selected zone. Breaking out or aborting releases the subscription. Open a new subscription after a disconnect. Subsequent calls rediscover the Core. Check the resulting state before retrying an interrupted write. Call `core.close()` when finished.
+
+Run `node standalone/player.mjs DATABASE` to list sources. Use `node standalone/player.mjs DATABASE PLUGIN PROVIDER "query" --zone 2` to search. Add `--append 1` or `--play 1` to select the first result.
+
+Rust clients call `Client::workshop_host` and `Client::subscribe`. Any language can use `echo-corectl DATABASE --zone 2 sdk APP_ID session`. Send one UTF-8 JSON object per line, such as `{"method":"queue.get","input":{"limit":10}}`. Read one ordered response per request, with a `value` or an `error`. Use `sdk APP_ID watch` for a stream of snapshots or `sdk APP_ID call METHOD '[JSON]'` for a single call.
+
+### Watch available sources and service commands
+
+Use `for await (const {revision, sources, commands} of core.watchDiscovery({signal, reconnect: true}))` to replace your menus with the initial directory and each updated directory. Sources and commands from one registration appear together across zones. A provider leaving or disconnecting removes its entries. Slow readers receive the latest snapshot. Compare revisions within a single Core run. Break, abort, or close the client to unsubscribe. With `reconnect: true`, the reader can start before the Core or stay open across restarts. It retries transient connection failures with backoff from 200 ms to 5 s and delivers a full snapshot on reconnection, even for the same revision number. Aborting also stops pending retries. The default reports a disconnect to the caller.
+
+Run `node standalone/player.mjs DATABASE --watch` while starting or stopping the station example. Rust clients can use `Client::watch_workshop_discovery(true)` and `next().await` to reconnect. With `echo-corectl DATABASE sdk APP_ID watch-discovery`, write and flush one newline per requested JSON line. Keep stdin open while waiting. Close it to unsubscribe. Add `--reconnect` to keep reading across Core restarts.
+
+### Provide music and commands from a standalone app
+
+Use `await core.provide({sources, commands})` to publish an application's contributions together to the local Core. Each source has an ID, title, search and resolve handlers, and optional browse handler. Commands have an ID, title and `run(input, {callerPluginId, signal})`. Other clients discover the app ID in `sources.list()` and `commands.list()`, then use their existing source and command APIs. Workshop plugins discover service commands via `context.commands.core`. Queues remain zone-specific.
+
+Run `ECHO_STATION_URL='https://your-server.example/live.mp3' node standalone/station.mjs DATABASE 'My station'` for an example that publishes both a music source and a playlist service. From another client, call `const list = await player.commands.invoke('example.station', 'playlist')` and `await player.queue.submit({mode:'append', tracks:list.tracks})`.
+
+The promise resolves after the Core acknowledges registration. Use stable IDs and resolve stream URLs at playback. Handle cancellation via the supplied signal. A second live instance using the same ID is rejected. Await `registration.close()` to stop serving, or close the client. Exiting the app releases its registrations. Observe `registration.closed` for disconnects and register again after the Core returns.
+
+Rust exposes `Client::register_workshop_app` with separate event and reply halves. Other languages can use `echo-corectl DATABASE sdk APP_ID provide` with newline-delimited JSON. Send a manifest with `sources: [{id,title,browse}]` and `commands: [{id,title}]`, then await `{"type":"ready"}`. For each `{type:"call", id, method, input}` reply once with `{id, value}` or `{id, error}`. On `{type:"cancel",id}`, abort and reply unless the terminal response was already sent. Close stdin to unregister. For acknowledged release and immediate ID reuse, send `{"type":"release"}` and wait for `{"type":"released"}`.

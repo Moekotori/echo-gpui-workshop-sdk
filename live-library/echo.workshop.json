@@ -3,7 +3,9 @@
   "schemaVersion": 1,
   "id": "community.live-library-example",
   "title": "实时曲库示例",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "content": { "kind": "plugin-package" },
-  "gpui": { "protocol": 1, "entry": "plugin.mjs" }
+  "gpui": { "protocol": 1, "entry": "plugin.mjs",
+    "requires": { "commands": ["artwork.current", "queue.search", "queue.saved.list"] }
+  }
 }

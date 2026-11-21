@@ -1,0 +1,13 @@
+{
+  "type": "echo-workshop-item",
+  "schemaVersion": 1,
+  "id": "community.playlist-service",
+  "title": "跨音源歌单服务",
+  "version": "1.0.0",
+  "content": { "kind": "plugin-package" },
+  "gpui": {
+    "protocol": 1,
+    "entry": "plugin.mjs",
+    "requires": { "commands": ["storage.records.set"], "features": ["commands.core", "queue.references"] }
+  }
+}

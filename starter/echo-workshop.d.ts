@@ -14,21 +14,178 @@ export interface WorkshopAction {
     input?: Json;
 }
 
+export interface WorkshopFieldCommit {
+    method: string;
+    input?: Json;
+}
+
+export type WorkshopFieldControl =
+    | { kind: 'toggle'; commit?: WorkshopFieldCommit }
+    | { kind: 'range'; min: number; max: number; step: number; unit?: string; commit?: WorkshopFieldCommit }
+    | { kind: 'choice'; options: { label: string; value: string }[] };
+
+export interface WorkshopField {
+    id: string;
+    label: string;
+    value?: string;
+    secret?: boolean;
+    advanced?: boolean;
+    control?: WorkshopFieldControl;
+}
+
+export interface WorkshopBoxStyle {
+    gap?: number;
+    padding?: number;
+    grow?: boolean;
+    surface?: boolean;
+    radius?: number;
+    width?: number;
+    background?: string;
+    align?: 'start' | 'center' | 'end' | 'stretch';
+    justify?: 'start' | 'center' | 'end' | 'spaceBetween';
+}
+export type WorkshopNode =
+    | { type: 'row' | 'column'; children: WorkshopNode[]; style?: WorkshopBoxStyle }
+    | { type: 'text'; text: string; role?: 'title' | 'heading' | 'body' | 'muted' | 'accent'; size?: number; color?: string }
+    | { type: 'image'; image: string; height: number; alt?: string; contain?: boolean }
+    | { type: 'field'; id: string }
+    | { type: 'button'; action: WorkshopAction }
+    | { type: 'pressable'; action: WorkshopAction; children: WorkshopNode[]; style?: WorkshopBoxStyle }
+    | { type: 'pageLink'; page: string; label: string }
+    | { type: 'divider' };
+export interface WorkshopLayout {
+    /** Change the key to reset scrolling when switching detail, filter or page. */
+    key?: string;
+    body?: WorkshopNode;
+    grid?: { minItemWidth: number; items: WorkshopNode[] };
+    /** Reference reusable PNG or JPEG data URLs by key. */
+    images?: Record<string, string>;
+}
+
 export interface WorkshopPage {
+    layout?: WorkshopLayout;
     title: string;
     description?: string;
-    fields?: { id: string; label: string; value?: string; secret?: boolean }[];
+    fields?: WorkshopField[];
+    advancedFieldsLabel?: string;
+    headerActions?: WorkshopAction[];
     actions?: WorkshopAction[];
     rows?: { title: string; detail?: string; actions?: WorkshopAction[] }[];
 }
 
+export interface WorkshopMvTrack {
+    id: string;
+    title: string;
+    artist: string;
+    durationSeconds: number;
+}
+
+export interface WorkshopMvCandidate {
+    id: string;
+    title: string;
+    artist?: string;
+    durationSeconds?: number;
+}
+
+export interface WorkshopMvProvider {
+    search(request: { track: WorkshopMvTrack; query: string; automatic: boolean; signal: AbortSignal }):
+        Awaitable<WorkshopMvCandidate[]>;
+    /** Override the default unique title-and-artist match. Return null for a miss. */
+    match?(request: { track: WorkshopMvTrack; signal: AbortSignal }): Awaitable<WorkshopMvCandidate | null>;
+    resolve(request: { track: WorkshopMvTrack; candidate: WorkshopMvCandidate; signal: AbortSignal }):
+        Awaitable<{ url: string; startSeconds?: number; quality?: string;
+            headers?: Partial<Record<'Authorization' | 'Referer' | 'User-Agent', string>> }>;
+}
+
+export interface WorkshopMvObservation {
+    track: WorkshopMvTrack | null;
+    state: 'playing' | 'paused';
+    enabled: boolean;
+    active: boolean;
+    matching: { durationTolerance: 'tight' | 'standard' | 'extended'; allowUncredited: boolean };
+}
+
+export interface WorkshopMvSessionVideo {
+    /** The URL returned by this provider's streams.publish. */
+    url: string;
+    trackId: string;
+    title: string;
+    sourceLabel: string;
+    quality: string;
+    startSeconds: number;
+    durationSeconds?: number;
+    page?: number;
+    /** Optional unscoped timing-offset key from an earlier release. */
+    previousTimingKey?: string;
+    canLowerQuality?: boolean;
+    adapted?: boolean;
+    recovered?: boolean;
+    accessDenied?: boolean;
+}
+
+export interface WorkshopMvSessionStatus {
+    automatic: { trackId: string | null; phase: string; message: string;
+        candidates: (WorkshopMvCandidate & { score?: number; reasons?: string[] })[] };
+    video?: WorkshopMvSessionVideo | null;
+    loggedIn?: boolean;
+    username?: string;
+    qrUrl?: string;
+    loginMessage?: string;
+    credentialsError?: string;
+    searchRestricted?: boolean;
+}
+
+type MvCallback<Input, Result = unknown> = (input: Input, request: {signal: AbortSignal}) => Awaitable<Result>;
+
+export interface WorkshopMvSessionProvider {
+    observe: MvCallback<WorkshopMvObservation>;
+    deactivate: MvCallback<WorkshopMvObservation>;
+    status: MvCallback<{probeAccount?: boolean}, WorkshopMvSessionStatus>;
+    search: MvCallback<{trackId: string; query: string}>;
+    select: MvCallback<{trackId: string; candidateId: string}>;
+    retry: MvCallback<null>;
+    clear: MvCallback<null>;
+    /** Provide all three account handlers to show the native sign-in controls. */
+    login?: MvCallback<null>;
+    closeLogin?: MvCallback<null>;
+    logout?: MvCallback<null>;
+    quality?: MvCallback<{quality: string}>;
+    lowerQuality?: MvCallback<{url: string}>;
+    playbackFailed?: MvCallback<{url: string}>;
+    skip?: MvCallback<{trackId: string; candidateId: string}>;
+    load?: MvCallback<{trackId: string; video: string; startSeconds: number}>;
+    searchUrl?: MvCallback<{query: string}, string>;
+}
+
+export interface WorkshopMvStreams {
+    publish(stream: {trackId: string; url: string;
+        headers?: Partial<Record<'Authorization' | 'Referer' | 'User-Agent', string>>}): Promise<string>;
+    clear(): void;
+    accessDenied(): boolean;
+}
+
+export interface SourceKey { plugin: string; provider: string }
+export interface SourceDescriptor extends SourceKey { title: string; browse: boolean }
+export interface SourceCollection { id: string; title: string; kind: 'album' | 'playlist' | 'folder'; coverUrl?: string; itemCount?: number }
+export interface SourceCatalogPage { tracks: TrackReference[]; collections: SourceCollection[]; hasMore: boolean }
+export interface SourcePageOptions { page?: number; pageSize?: number }
+
 export interface TrackReference {
+    coverUrl?: string;
     providerTrackId: string;
     title: string;
     artist?: string;
+    album?: string;
+    duration?: number;
 }
 
 export interface StreamTrack {
+    /** Follow the source sample rate when negotiating ASIO output. */
+    followStreamRate?: boolean;
+    /** Exact lookup through a lyrics provider registered by this plugin. */
+    lyricsProvider?: string;
+    /** Public artwork URL to try if the primary artwork is unavailable. */
+    fallbackCover?: string;
     title: string;
     url: string;
     artist?: string;
@@ -42,6 +199,8 @@ export interface StreamTrack {
 export interface SearchSource {
     search(request: { query: string; page: number; pageSize: number; signal: AbortSignal }):
         Awaitable<{ tracks: TrackReference[]; hasMore?: boolean }>;
+    browse?(request: { collectionId: string | null; page: number; pageSize: number; signal: AbortSignal }):
+        Awaitable<{ tracks: TrackReference[]; collections?: SourceCollection[]; hasMore?: boolean }>;
     resolve(request: { providerTrackId: string; signal: AbortSignal }): Awaitable<StreamTrack>;
 }
 
@@ -75,6 +234,7 @@ interface TagRegistry {
 }
 
 interface HostDescription {
+    features: string[];
     protocol: number;
     commands: string[];
     events: string[];
@@ -367,6 +527,8 @@ export interface LibraryChange {
     revision: number;
 }
 export interface CurrentTrack {
+    /** Replayable identity when provided by the host and Core. */
+    reference?: QueueReference | null;
     sequence: number;
     title: string;
     artist: string;
@@ -431,8 +593,10 @@ export type PlaybackCommand =
     | { action: 'setMode'; mode: PlaybackMode }
     | { action: 'setShuffle'; enabled: boolean }
     | { action: 'setRepeat'; mode: RepeatMode };
-export type QueueItem =
+export type QueueReference =
     | { kind: 'catalog'; source: CatalogSource; id: string }
+    | { kind: 'source'; source: SourceKey; track: TrackReference };
+export type QueueItem = QueueReference
     | ({ kind: 'stream'; id: string } & StreamTrack);
 export type QueueEdit =
     | { action: 'clear' | 'undo' }
@@ -441,13 +605,28 @@ export type QueueEdit =
     | { action: 'reorder'; input: number[] }
     | { action: 'moveTo'; input: { indices: number[]; offset: number } }
     | { action: 'setRemoveAfterPlay'; input: { indices: number[]; enabled: boolean } };
+export interface WorkshopArtwork {
+    width: number;
+    height: number;
+    /** Assign to a named entry in layout.images. */
+    dataUrl: string;
+}
+export interface QueueSearchHit {
+    queueId: number;
+    /** Zero-based, valid for this queueId. */
+    index: number;
+    title: string;
+    artist: string;
+}
+export interface SavedQueueSummary { id: string; name: string; tracks: number }
 export interface QueuePage {
     queueId: number;
+    /** One-based current position, or zero for no current item. */
     position: number;
     offset: number;
     total: number;
     hasNext: boolean;
-    items: { title: string; artist: string; occurrenceId?: string | null; catalog: { source: CatalogSource; id: string } | null }[];
+    items: { title: string; artist: string; occurrenceId?: string | null; reference?: QueueReference | null; catalog: { source: CatalogSource; id: string } | null }[];
 }
 export interface LyricLine {
     timeMs: number | null;
@@ -564,6 +743,19 @@ export interface CacheStorage {
     remove(bucket: string, key: string): Promise<null>;
 }
 
+export interface WorkshopLyricsCandidate {
+    title: string;
+    artist: string;
+    album?: string;
+    durationSeconds?: number;
+    syncedLyrics?: string;
+    plainLyrics?: string;
+    karaokeLyrics?: string;
+    translationLyrics?: string;
+    romanizationLyrics?: string;
+    instrumental?: boolean;
+}
+
 export type LyricsDocumentFormat = 'lrc' | 'ttml' | 'txt';
 
 export interface WorkshopTrackLyrics {
@@ -608,6 +800,13 @@ export interface WorkshopContext {
         remove(key: string): Promise<null>;
     };
     readonly lyrics: {
+        registerProvider(id: string, descriptor: Descriptor, lookup: (request: {
+            track: { trackId: string | null; title: string; artist: string; album: string | null; durationSeconds: number | null };
+            signal: AbortSignal;
+            automatic: boolean;
+            /** Source requested a lookup by its stable track ID. */
+            exact: boolean;
+        }) => Awaitable<WorkshopLyricsCandidate[]>): void;
         get(trackId?: string): Promise<WorkshopTrackLyrics | null>;
         applyCustom(trackId: string, text: string, format?: LyricsDocumentFormat): Promise<WorkshopTrackLyrics>;
         setOffset(trackId: string, offsetMs: number): Promise<WorkshopTrackLyrics>;
@@ -705,6 +904,12 @@ export interface WorkshopContext {
             freeze(id: string, options?: { title?: string }): Promise<{ id: string; title: string; count: number }>;
         };
     };
+    readonly artwork: {
+        track(id: string, source?: CatalogSource): Promise<WorkshopArtwork | null>;
+        album(id: string, source?: CatalogSource): Promise<WorkshopArtwork | null>;
+        /** Pass CurrentTrack.sequence to reject a result after a track change. */
+        current(sequence?: number): Promise<WorkshopArtwork | null>;
+    };
     readonly history: {
         list(options?: HistoryQuery): Promise<HistoryPage>;
         review(options?: HistoryReviewQuery): Promise<HistoryReview>;
@@ -749,20 +954,49 @@ export interface WorkshopContext {
     };
     readonly queue: {
         onChanged(listener: (event: QueueChange) => Awaitable<void>): () => void;
-        get(options?: { offset?: number; queueId?: number }): Promise<QueuePage>;
+        /** limit is 1–256 and defaults to 256. Supply queueId when continuing a previous page. */
+        get(options?: { offset?: number; queueId?: number; limit?: number }): Promise<QueuePage>;
+        search(query: string, options?: { source?: CatalogSource; remoteId?: string }): Promise<QueueSearchHit[]>;
+        playAt(queueId: number, index: number): Promise<null>;
+        readonly saved: {
+            onChanged(listener: (event: { snapshots: SavedQueueSummary[]; undoRemoveId: string | null }) => Awaitable<void>): () => void;
+            list(): Promise<SavedQueueSummary[]>;
+            save(queueId: number): Promise<null>;
+            restore(queueId: number, snapshotId: string): Promise<null>;
+            remove(snapshotId: string): Promise<null>;
+            undoRemove(snapshotId: string): Promise<null>;
+        };
         playItem(queueId: number, occurrenceId: string): Promise<null>;
         edit(queueId: number, edit: QueueEdit): Promise<null>;
         submit(request: { mode: 'play' | 'append' | 'playNext'; tracks: QueueItem[]; index?: number }): Promise<null>;
     };
     readonly pages: {
-        invalidate(): void;
-        register(id: string, descriptor: Descriptor, open: (request: { signal: AbortSignal }) =>
+        /** Returns the method to use on a button, row action or range commit. */
+        registerAction(id: string, run: (request: {
+            fields: Readonly<Record<string, string>>; data: Json; signal: AbortSignal; windowId: string | null;
+        }) => Awaitable<WorkshopPage | void | null>): string;
+        invalidate(pageId?: string): void;
+        register(id: string, descriptor: Descriptor & { window?: { width?: number; height?: number } }, open: (request: { signal: AbortSignal; windowId: string | null }) =>
             Awaitable<WorkshopPage>): void;
     };
+    readonly mv: {
+        registerSessionProvider(id: string, descriptor: Descriptor & {
+            matchPreferences?: boolean; qualities?: {value: string; label: string}[];
+        }, handlers: WorkshopMvSessionProvider): WorkshopMvStreams;
+        registerProvider(id: string, descriptor: Descriptor, handlers: WorkshopMvProvider): void;
+    };
     readonly sources: {
-        registerProvider(id: string, descriptor: Descriptor, handlers: SearchSource): void;
+        list(): Promise<SourceDescriptor[]>;
+        search(source: SourceKey, query: string, options?: SourcePageOptions): Promise<SourceCatalogPage>;
+        browse(source: SourceKey, collectionId?: string | null, options?: SourcePageOptions): Promise<SourceCatalogPage>;
+        registerProvider(id: string, descriptor: Descriptor & { placement?: 'playlists' }, handlers: SearchSource): void;
     };
     readonly commands: {
+        /** Commands registered in the connected Core, or this host in single-process mode. */
+        readonly core: {
+            list(): Promise<CommandDescriptor[]>;
+            invoke(pluginId: string, commandId: string, input?: Json): Promise<Json>;
+        };
         register(id: string, descriptor: Descriptor, run: (input: Json, context: {
             callerPluginId: string;
             signal: AbortSignal;

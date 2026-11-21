@@ -3,7 +3,17 @@ let queueLength = 0;
 let libraryRevision = null;
 const subscriptions = [];
 
-export function activate({ library, playback, queue, pages }) {
+export function activate({ library, artwork, commands, playback, queue, pages }) {
+    commands.register('inspect-session', { title: '查看播放会话' }, async input => {
+        const current = await playback.getCurrentTrack();
+        const query = typeof input?.query === 'string' ? input.query : current?.title ?? '';
+        const [cover, matches, snapshots] = await Promise.all([
+            current ? artwork.current(current.sequence) : null,
+            queue.search(query),
+            queue.saved.list(),
+        ]);
+        return { current, cover: cover && { width: cover.width, height: cover.height }, matches, snapshots };
+    });
     subscriptions.push(
         library.onChanged(event => {
             if (event.source !== 'Local') return;

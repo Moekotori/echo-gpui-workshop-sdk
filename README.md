@@ -2,6 +2,8 @@
 
 [公开 SDK](https://github.com/Moekotori/echo-gpui-workshop-sdk) · [下载](https://github.com/Moekotori/echo-gpui-workshop-sdk/releases/latest) · [反馈与讨论](https://github.com/Moekotori/echo-gpui-workshop-sdk/issues) · [English quickstart](README.en.md)
 
+开发自制播放器、歌单工具或音源服务可从[独立应用 SDK](#独立应用-sdk)开始，示例覆盖[注册能力](#独立应用提供音源和服务)和[实时发现](#订阅可用音源和服务命令)。
+
 已安装的 ECHO GPUI 和一个文本编辑器就可以创建、调试和分发 JavaScript 插件。
 插件可以注册原生页面、全局搜索音源、标签和封面候选，以及供其他插件调用的命令。
 SDK 中的文档、类型声明、清单 schema 和示例采用 [MIT 许可](LICENSE)，可直接复制和修改。分发时保留许可和版权声明。
@@ -38,7 +40,9 @@ echo-gpui --workshop dev
 | 模板 | 适用场景 |
 | --- | --- |
 | [`page`](starter)（默认） | 从原生页面、按钮和私有存储开始。 |
+| [`cover-browser`](cover-browser) | 自己编排封面网格、筛选栏和歌单详情，点击曲目播放，并在独立窗口查看和控制播放队列。 |
 | [`live-library`](live-library) | 订阅播放、队列和曲库变化，自动刷新页面。示例支持播放、入队和收藏。 |
+| [`stream-library`](stream-library) | 「我的音源」支持添加网络电台和音频直链，编辑地址、按分组浏览，并播放其他插件提供的曲目。 |
 | [`navidrome`](navidrome) | 接入 OpenSubsonic 服务，展示登录、搜索、翻页、歌词查询和播放。在插件页填写账号后，用 F4 选择这个搜索源。 |
 
 - `doctor` 显示 ECHO 当前选用的 Node.js 路径和版本，并验证工坊所需的运行时能力。
@@ -68,7 +72,7 @@ node sdk.mjs check my-plugin
 node sdk.mjs capabilities
 ```
 
-`init` 使用与 GPUI 相同的示例源码和项目布局，可加 `--template live-library` 或 `--template navidrome`。
+`init` 使用与 GPUI 相同的示例源码和项目布局，可用 `--template stream-library`、`--template live-library` 或 `--template navidrome`。
 `check` 读取原生 GPUI 清单，检查入口文件位置和 JavaScript 语法，无需执行插件。
 支持传入项目目录、包目录或清单。使用目标版本的 `echo-gpui --workshop test my-plugin`
 验证依赖、页面和宿主调用，用 `--workshop pack` 生成安装包。
@@ -116,6 +120,94 @@ node sdk.mjs preview live-library --action play --input '"demo-2"'
 预览会以当前用户权限执行插件代码，只预览信任的插件。正式发布前用目标版本的
 `--workshop test` 和桌面开发会话检查实际宿主行为及页面布局。
 
+### 第三方 MV 来源
+
+用 `node sdk.mjs init my-videos community.yourname.videos --template mv-source` 创建项目。安装并启用后，在「设置 → 歌词设置 → 显示与字体 → MV 来源」选它。打开歌词页的 MV 舞台后，切歌会查询选定来源。「MV 设置」里的「自动匹配」可以关闭；也可以输入关键词搜索，点击候选的「切换」。本地 MV 优先。已批准的安装版本可以恢复，开发会话需重新启动。未选择来源时，用户手动启用只有一个 MV 来源的插件会选中该来源。
+
+在 `activate(ctx)` 中调用 `ctx.mv.registerProvider(id, { title }, { search, resolve, match? })`。插件 ID 和来源 ID 一起标识来源，升级时保持稳定。每次回调都有 `signal`，传给异步请求并在取消时停止工作。
+
+| 回调 | 输入与返回 |
+| --- | --- |
+| `search` | 接收 `{ track, query, automatic, signal }`，返回最多 24 条候选。每条包含稳定的 `id`、`title`，可附 `artist` 和以秒为单位的 `durationSeconds`。空数组表示无结果。手动搜索只更新候选，选中后才替换视频。 |
+| `match`（可选） | 接收 `{ track, signal }`，返回一条确定的候选或 `null`。省略时宿主调用 `search`，仅当曲名和非空艺人都一致且只有一个匹配时自动选用。 |
+| `resolve` | 接收 `{ track, candidate, signal }`，返回 `{ url, startSeconds?, quality? }`。认证视频可额外提供 `headers`（`Authorization`、`Referer`、`User-Agent`），仅用于当前视频的上游读取。使用最终 HTTPS 视频直链；服务端需支持字节范围请求并回送 HTTP 206。解码、画面与歌曲时钟同步由宿主处理。 |
+
+[开放视频目录示例](mv-source/plugin.mjs) 内置两条演示片记录，可在插件页面填写自己的 HTTPS JSON 地址。目录格式为 `[{"id":"live","title":"曲名","artist":"艺人","url":"https://media.example.org/live.mp4"}]`，时长可选。示例目录最多 1000 条、256 KiB，缓存一分钟。演示素材为 [MDN Flower](https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4) 和 [Blender Foundation 的 Sintel 预告片](https://media.w3.org/2010/05/sintel/trailer.mp4)。
+
+```sh
+node sdk.mjs preview mv-source --mv catalog --track '{"title":"Flower","artist":"MDN"}'
+node sdk.mjs preview mv-source --mv catalog --track '{"title":"Flower","artist":"MDN"}' --query sintel --candidate sintel
+```
+
+预览输出来源、候选与选中项。请在播放器中核对视频解码和实际同步效果。
+
+#### 有登录和后台任务的 MV 来源
+
+在清单中声明 `gpui.requires.features: ["mv.session"]`，然后用 `ctx.mv.registerSessionProvider(id, descriptor, handlers)` 注册。宿主通过 `observe` 告知当前歌曲、播放状态和匹配偏好，通过 `status` 读取当前视频及候选。插件负责登录、搜索、评分、地址解析和过期续流，并通过 `ctx.credentials` 保存自己的账号会话。请求的第二个参数带有取消信号。
+
+注册返回的 `streams.publish({trackId, url, headers?})` 接收该歌曲的最终 HTTPS 地址，返回可放入 `status.video.url` 的临时中继地址。状态只接受该来源为当前歌曲发布的地址；停用时关闭中继。使用 `streams.accessDenied()` 检查当前视频上游是否拒绝读取，`streams.clear()` 终止当前视频。来源自行限制上游域名，API 登录凭据和播放请求头分别处理。
+
+提供 `login`、`closeLogin`、`logout` 可启用账号控件，扫码链接和提示从 `status` 返回。来源还可提供网页搜索、手动链接、忽略候选、画质切换与播放失败恢复回调。画质选项由 `descriptor.qualities` 声明，全部字段和签名见 [SDK 类型](starter/echo-workshop.d.ts)。
+
+### 自动 LRC 歌词源
+
+用 `node sdk.mjs init my-lyrics community.yourname.lyrics --template lrc-source` 创建项目，也可直接运行 [LRCLIB 示例](lrc-source/plugin.mjs)。支持此接口的宿主在「设置 → 歌词 → 显示与字体」中提供「自动歌词源」。先在「插件」中运行并授权项目，再在设置中选择注册的来源。选择即开启自动匹配；已安装且获准的版本会在下次启动时随选择恢复，开发会话需重新运行。
+
+在 `activate(context)` 中调用 `context.lyrics.registerProvider(id, { title }, async ({ track, signal }) => candidates)`。宿主按插件 ID 和来源 ID 区分来源，更新插件时应保持两者稳定。用曲名、艺人查询自己的目录，将 `signal` 传给网络请求。每个候选使用来源记录的 `title` 和 `artist`。主歌词可用 `syncedLyrics`（LRC）、`karaokeLyrics`（逐字）或 `plainLyrics`，也可附带 `translationLyrics` 和 `romanizationLyrics`。纯音乐返回 `instrumental: true`。有专辑和时长时再给出 `album`、`durationSeconds`。回调的 `automatic` 区分切歌自动查询与手动查找。返回空数组表示无匹配。每次最多接收 24 个候选，每个歌词文本字段上限 512 KiB，候选合计上限 768 KiB。
+
+切到带曲名、艺人和时长且缺少歌词的歌曲时，宿主只查询选定的自动源，评分通过后采用 LRC。已有歌词、手动编辑和纯音乐标记优先。关闭自动网络歌词匹配、停用插件或关闭网络后，自动查询停止。可用 `echo-gpui --workshop test my-lyrics` 确认注册，再用桌面版切歌验证匹配。
+
+### 自由编排原生页面
+
+在「插件 → 创作 → 临时运行开发包」中选择[唱片架清单](cover-browser/echo.workshop.json)。样例从当前曲库读取歌单，使用包内的唱片封套插画。点封面查看曲目，点「播放」向当前队列提交曲目。没有歌单时会显示空状态。
+
+```sh
+node sdk.mjs init my-shelf community.my-shelf --template cover-browser
+node sdk.mjs preview my-shelf --action page.action.open
+```
+
+在清单的 `gpui.requires.features` 中声明 `"pages.layout"`。页面仍由 `pages.register()` 注册，动作仍可返回新页面或用 `pages.invalidate()` 刷新。返回 `layout` 后，插件负责组织整个内容区，宿主提供页面标题、返回入口和滚动。表单定义放在 `fields`，通过 `{ type: 'field', id }` 指定它的位置。省略 `layout` 继续使用原来的页面格式。
+
+- `layout.body` 是可嵌套的节点树。行、列和可点击容器可设置间距、内边距、宽度、伸展、对齐、圆角和背景色。文字支持主题角色，也可指定字号和颜色。按钮与整块封面都能调用插件动作；`pageLink` 打开本插件注册的页面。普通页面进入主窗口的导航历史，独立窗口在桌面打开。
+- `layout.grid` 接收 `minItemWidth`（64–1200 逻辑像素）和最多 256 个节点。窗口宽度决定列数，GPUI 按可见行创建控件。插件负责按页向来源取数。在切换筛选、分页或详情时改变 `layout.key` 可回到顶部。
+- `layout.images` 按名称复用 PNG、JPEG 的 base64 data URL。图片节点引用名称、指定高度，可选择完整显示或裁切并提供 `alt`。单图边长最多 2048 像素，每页最多 64 张、总计 8,388,608 像素，协议单条消息仍为 1 MiB。使用缩略图，只发送当前页需要的图片。
+- 每页最多 2048 个节点、12 层。字段引用须存在且在同一布局里只出现一次。可点击容器的子节点只放展示内容。完整节点和样式类型见 [WorkshopNode](starter/echo-workshop.d.ts)，筛选、翻页、空状态与返回逻辑见[示例源码](cover-browser/plugin.mjs)。
+
+### 打开独立窗口
+
+在清单的 `gpui.requires.features` 中加入 `pages.window`。将 `window` 写进页面描述后，用户可从插件入口或 `pageLink` 打开它。再次打开同一页面会聚焦已有窗口。每个窗口拥有自己的输入框、滚动位置和请求，与主页面共用插件进程及已授权的 SDK。
+
+```js
+pages.register('queue', { title: '播放队列', window: { width: 560, height: 460 } },
+    async ({ windowId }) => {
+        const { total } = await queue.get();
+        return { title: '播放队列', description: `共 ${total} 首` };
+    });
+queue.onChanged(() => pages.invalidate('queue'));
+// 在主页面的 layout.body 或其 children 中放置这个节点
+const queueLink = { type: 'pageLink', page: 'queue', label: '打开队列窗口' };
+```
+
+`window: {}` 的默认初始尺寸为 720 × 520 逻辑像素。宽度范围为 240–1920，高度为 160–1200，每个插件最多注册 16 个窗口页面。打开和动作回调都收到 `windowId`，独立窗口为注册 ID，主页面为 `null`。用 `pages.invalidate(id)` 请求刷新指定页面，用 `pages.invalidate()` 刷新所有打开的页面。用户可单独关闭、重开窗口；停用插件时，宿主关闭其窗口。离线运行 `node sdk.mjs preview my-shelf --page queue --action page.action.toggle` 可检查页面及动作返回值。
+
+### 自定义插件页面和交互
+
+在 `activate` 中用 `context.pages.registerAction(id, handler)` 注册动作。它返回可直接填到按钮、行操作或控件 `commit.method` 的方法名。回调收到当前表单的 `fields`（字符串键值）、按钮的 `data` 和取消信号 `signal`。返回新页面即可更新显示，返回空值可保持当前页面。需要持久化时调用 `context.storage.set`。已有的 `handle(request, context)` 动作仍然可用。
+
+| 页面字段 | 写法与交互 |
+| --- | --- |
+| `headerActions`、`actions`、`rows[].actions` | 分别在页首、表单下方和列表行放置动作。 |
+| `fields[].control.kind: 'choice'` | 设置 1–16 个 `{ value, label }` 选项，字段初始值取其中一个字符串。 |
+| `'toggle'` | 初始值为字符串 `'true'` 或 `'false'`。可设 `commit: { method, input? }` 在切换时提交。 |
+| `'range'` | 设置 `min`、`max`、`step` 和可选的 `unit`；初始值为范围内的数字字符串。可设 `commit` 在松开滑杆或键盘调整后提交。 |
+| `advancedFieldsLabel` | 提供折叠区标题，把对应字段标记为 `advanced: true`。普通文本和密码输入仍使用 `fields`。 |
+
+[LRCLIB 示例](lrc-source/plugin.mjs)用同一套 API 实现查询格式、候选数和纯音乐选项。下面的命令在同一个临时会话里保存设置并实际向 LRCLIB 发起查询，输出包含生效的页面值和候选。省略 `--automatic` 可模拟手动查找。
+
+```sh
+node sdk.mjs preview lrc-source --action page.action.save --fields '{"limit":"2","format":"fallback","instrumental":"false"}' --lyrics synced --automatic --track '{"title":"Space Oddity","artist":"David Bowie","durationSeconds":315}'
+```
+
 ### 清单和类型
 
 在插件包里放一份 `echo.workshop.json` 和它指向的 JavaScript 入口。可以从 [starter 清单](starter/echo.workshop.json) 开始。
@@ -150,9 +242,9 @@ echo-gpui --workshop test my-plugin-0.1.0.zip
   或在「插件 → 已安装 → 安装 / 导入文件」选择 ZIP，然后启用。也可以直接压缩插件目录。
   ZIP 里只放一个插件，`echo.workshop.json` 可以位于 ZIP 根目录或目录内。ZIP 上限为
   256 MiB，插件解压后上限为 512 MiB。文件夹和清单也能照常安装。
-- **Steam 创意工坊** · 连接 Steam 后，在「插件 → 创作」选择作品 ZIP 或清单，以及小于 1 MiB 的 PNG、
-  JPEG 或 GIF 预览图。首次可选「私密」发布，再从作品页确认预览和安装流程。更新时使用同一 Steam 账号和插件 ID，
-  应用会提交到原有作品。准备公开时选择相应可见性并确认 Steam 所需的工坊协议。
+- **Steam 创意工坊** · 连接 Steam，打开「插件 → 创作 → 选择项目文件夹」，选中 SDK 项目即可发布。正在调试的项目也可以点项目行的上传按钮。已有 ZIP 或清单可点「选择 ZIP 或清单」。
+  首次发布时会读取项目根目录或包内的 `preview.png`、`preview.jpg`、`preview.jpeg` 或 `preview.gif`（小于 1 MiB）。没有预览图时会提示选择，然后确认可见范围。
+  更新时递增清单版本并保留插件 ID。在保有发布记录的本机使用同一 Steam 账号，核对弹窗中的作品编号，点「更新内容」即可沿用原预览图和可见范围。也可以在弹窗里更换两者。
 - **Steam 测试** · 将 `pack` 的输出名改成无 `.zip` 后缀的新目录，再用
   `echo-gpui --workshop steam-vdf my-plugin-0.1.0 preview.png my-plugin.vdf` 生成私密测试 VDF。使用 Valve 的
   `workshop_build_item` 上传时，SteamCMD 会在成功后回填作品 ID。保留该 ID，更新时可复用
@@ -314,8 +406,9 @@ GPUI 应用包内可映射的布局、字号、行距、上下文透明度、颜
 
 在 `activate(context)` 注册一次，清单只需提供包和入口信息。
 
-- `context.pages.register(id, {title}, open)` 在侧栏加入页面。宿主调用
-  `open({signal})` 获取 GPUI 页面数据。
+- `context.pages.register(id, {title}, open)` 在侧栏加入独立页面。点击后，宿主调用
+  `open({signal})` 获取页面数据，并在主内容区渲染。一个插件可以注册多个不同 ID 的页面，
+  用户可在侧栏切换，也可用返回和前进再次打开。
 - `context.sources.registerProvider(id, {title}, {search, resolve})` 在全局搜索加入
   一个可选范围。用户选中它后，`search({query, page, pageSize, signal})` 返回
   `{tracks, hasMore}`。每首歌提供 `providerTrackId`、`title`，也可提供 `artist`。
@@ -325,6 +418,36 @@ GPUI 应用包内可映射的布局、字号、行距、上下文透明度、颜
   宿主用注册源和曲目标识组成队列身份，并交给现有播放链路。
 - 把 `signal` 传给网络请求。改写搜索词、切换范围或关闭搜索时，宿主会取消过期请求。
   注册随插件停止而撤销。
+
+### 让其他插件使用你的音源
+
+播放器、歌单工具和独立窗口可以用同一套接口访问已启用的音源。在清单的 `gpui.requires.features` 加入 `"sources.catalog"`。打开「我的音源 → 浏览已启用音源」可以实测提供方和消费方的交互。
+
+```js
+async function appendFirstMatch({ sources, queue }, source, query) {
+    const page = await sources.search(source, query, { page: 1, pageSize: 12 });
+    if (page.tracks.length) {
+        await queue.submit({ mode: 'append', tracks: [{ kind: 'source', source, track: page.tracks[0] }] });
+    }
+}
+```
+
+- 用 `await sources.list()` 取得用户已启用的来源。每项含 `plugin`、`provider`、`title` 和 `browse`。用前两个字段定位来源。仅实现搜索的旧提供方仍可被发现和查询。
+- 在提供方的 `{search, resolve}` 中加入可选的 `browse({collectionId, page, pageSize, signal})`。首次浏览传入 `null`，后续传入之前返回的集合 ID。返回 `{tracks, collections, hasMore}`，集合形如 `{kind: 'album' | 'playlist' | 'folder', id, title}`。每页曲目与集合共计最多 24 项，按请求的页大小返回。
+- 在消费方用 `sources.browse(source, null, options)` 展示根目录，用 `sources.browse(source, collection.id, options)` 打开集合。曲目可提交到 `play`、`append` 或 `playNext`。目录和队列只需稳定 ID、标题及可选的艺人、专辑和时长（秒）。
+- 播放会话在需要播放源曲目时调用提供方的 `resolve`。公开目录结果与队列快照都不带播放 URL 或 bearer。将签名地址和鉴权留在 `resolve`，在恢复队列时启用相同提供方并保持曲目 ID 稳定。
+
+### 在独立 Core 播放
+
+桌面连接同版本的本机独立 Core 后，启用音源插件即可共享它的目录和当前登录会话。连接同一个 Core 的其他播放器和歌单工具也能用 `sources.list/search/browse` 发现它，通过 `queue.submit` 向自己连接的播放区点播、插播或追加曲目。桌面退出或插件停用时，该来源撤销注册。重新启用同一来源后可重播队列中原有的曲目。
+
+要关闭桌面后继续播放新曲目，可让 Core 自己运行音源。在 Core 数据库旁的 `workshop` 目录中安装并授权所需版本，先停止桌面中该插件的实例，再启动 Core。例如已录入的「我的音源」可直接使用已安装插件的数据：
+
+```sh
+echo-server --local-core --database /path/to/library.sqlite --workshop-source community.stream-library
+```
+
+每个音源插件使用一个 `--workshop-source` 参数。Core 核对已安装版本的授权和内容指纹，使用该插件已有的私有数据。需要登录的服务应在启动时恢复自己的凭据；仅存于桌面内存的登录会话随桌面退出而结束。
 
 ## 注册标签与封面候选
 
@@ -522,6 +645,37 @@ node sdk.mjs check-original ./my-original-plugin/content/community.echo --json
 和 `searchTracks({ rules }, { page, pageSize })`。按文件路径或文件夹筛选额外需要 `library:path`，
 返回的曲目字段省略本机路径。
 
+### 读取封面和控制播放队列
+
+| 作者要做的操作 | 公开 SDK |
+| --- | --- |
+| 读取曲目、专辑、当前播放封面 | `artwork.track(trackId, source?)`、`artwork.album(albumId, source?)`、`artwork.current(sequence?)` |
+| 分页读取队列 | `queue.get({ offset, limit, queueId })`。首屏可省略 `queueId`，后续页传回它。每次 1–256 项，默认 256 |
+| 在队列里搜索并点播 | `queue.search(query, { source?, remoteId? })` 最多返回 16 个匹配项。将同一结果的 `queueId` 和从 0 开始的 `index` 传给 `queue.playAt(queueId, index)` |
+| 管理宿主保存的队列 | `queue.saved.list()` 获取 `{id, name, tracks}[]`，`save(queueId)` 保存，`restore(queueId, snapshotId)` 恢复，`remove(snapshotId)` 删除。后三个方法也属于 `queue.saved` |
+
+封面结果含 `width`、`height`、`dataUrl`，没有可用图片时返回 `null`。曲目和专辑缩略图最长边至多 340 像素，当前播放封面至多 512 像素。用当前曲目的 `sequence` 请求封面后，如果歌曲已经切换，宿主返回 `track-changed`。页面只需取可见作品的图片，避免每次播放进度变化时重读。
+
+```js
+const track = await playback.getCurrentTrack();
+const cover = track && await artwork.current(track.sequence);
+return {
+    title: track?.title ?? '尚未播放',
+    layout: cover
+        ? { images: { cover: cover.dataUrl }, body: { type: 'image', image: 'cover', height: 180 } }
+        : { body: { type: 'text', text: '暂无封面' } },
+};
+```
+
+队列分页和点播适用于进程内及独立 Core。读取时可用每一行的 `occurrenceId` 与该页的 `queueId` 调用 `queue.playItem`，同一首歌曲重复入队也能准确选择。页面的 `position` 从 1 开始，`index` 和 `offset` 从 0 开始。队列已更改时重新读取或搜索，再让用户选择。快照与播放器队列页共用，最多保留最近 12 份；空队列和含临时音频流的队列无法保存。快照 ID 是字符串，请原样传回。用 `queue.saved.onChanged(listener)` 订阅已载入的快照列表变化，回调返回 `{ snapshots, undoRemoveId }`。首次打开快照面板时调用 `list()` 读取已保存的记录。删除后可将 `undoRemoveId` 传给 `queue.saved.undoRemove(id)` 撤销最近一次删除。需要这些能力的插件在 `gpui.requires.commands` 中列出实际使用的命令。
+
+用实时曲库示例检查接口联动：
+
+```sh
+node sdk.mjs init my-library community.my-library --template live-library
+node sdk.mjs preview my-library --command inspect-session --input '{"query":"first"}'
+```
+
 ### 智能歌单预览
 
 `library.trackSkipStats(id)` 返回本机曲目的 `skipCount` 和最近跳过时间 `lastSkippedAt`。
@@ -693,9 +847,10 @@ function dbfs(value) {
 | `lyrics.get` | 查询正在播放的曲目的歌词行和 `trackOffsetMs`。 |
 | `queue.submit` | 使用 `mode`（`play`、`append` 或 `playNext`）和 `tracks` 提交曲目。播放时可用从 0 开始的 `index` 选择起始曲目。 |
 
-`queue.submit` 接受两类曲目：
+`queue.submit` 接受三类曲目。
 
 - `{kind: "catalog", source, id}` 引用宿主曲库。
+- `{kind: "source", source: {plugin, provider}, track}` 引用插件目录曲目，播放时由音源解析。
 - `{kind: "stream", id, title, url, artist?, album?, duration?, cover?, lyrics?, bearer?}`
   传入 HTTP(S) 音频流。时长单位为秒，歌词支持 LRC 和纯文本。
   插件内自行完成服务登录与流地址解析。临时 URL 和凭据留在内存中，含临时流的队列
@@ -703,3 +858,121 @@ function dbfs(value) {
 
 播放命令提交到 ECHO 的现有队列。用 `playback.get` 或 `playback.changed`
 观察播放结果。
+
+### 本地相似歌曲
+
+独立插件可通过 `commands.register('similar-recordings', {title}, handler)` 提供相似录音。用户从歌曲菜单发起查询时，宿主传入 `{ title, artist, limit }`，接收按相关性排序的 `[{title, artist}]`（最多 64 条），再与本机可见录音匹配。没有可用提供方时使用曲库中的艺人、流派、年代和速度。多个提供方运行时按插件 ID 排序选首个。`similar-recordings/` 是 Last.fm 的可安装示例，启动后在插件设置页填写自己的 API Key。
+
+### 给其他播放器提供 Core 服务
+
+独立 Core 可以按 ID 启动已安装、已批准当前版本的插件。作者通过 `commands.register` 自行定义命令和 JSON 参数，播放器、歌单编辑器及其他插件通过 `commands.core.list()` 发现服务，用 `commands.core.invoke(pluginId, commandId, input)` 调用。命令处理器可读取 `callerPluginId`。服务在自己的播放区运行，客户端拿回曲目后可以提交到自己控制的播放区。单进程模式也支持同一组调用。
+
+```sh
+echo-server --local-core --database /path/to/library.sqlite --workshop-plugin community.playlist-service
+```
+
+`--workshop-plugin` 和 `--workshop-source` 均可重复，按参数顺序启动。后者还会检查插件确实注册了音源。桌面插件的 `commands.list()` 和 `commands.invoke()` 继续访问当前宿主的插件。
+
+`playlist-service` 模板公开保存、分页列举、读取、删除四个命令。歌单存入该插件自己的持久化记录。下面把当前队列存成歌单，再从服务取回并追加到播放器。示例每张歌单最多 256 首，保留重复曲目及其顺序。
+
+```js
+const service = 'community.playlist-service';
+const call = (id, input) => context.commands.core.invoke(service, id, input);
+let page = await context.queue.get({ limit: 256 });
+if (page.total > 256) throw new Error('请选择要保存的 256 首以内的曲目');
+const tracks = page.items.map(row => row.reference);
+while (page.hasNext) {
+    page = await context.queue.get({ queueId: page.queueId, offset: tracks.length });
+    tracks.push(...page.items.map(row => row.reference));
+}
+if (tracks.some(track => !track)) throw new Error('所选曲目中有临时流或无持久标识的文件');
+await call('save', { id: 'my-mix', title: '我的混合歌单', tracks });
+const saved = await call('get', { id: 'my-mix' });
+if (saved.value.tracks.length) await context.queue.submit({ mode: 'append', tracks: saved.value.tracks });
+```
+
+再次保存同一 ID 时传入 `revision: saved.revision`，删除也使用读取时的版本。列举时传 `{limit, before?}`，下一页使用返回的 `nextCursor`。`queue.get()`、`playback.getCurrentTrack()` 和换歌事件中的 `reference` 可直接回传给 `queue.submit`。临时流的引用为 `null`，旧宿主可能省略该字段。音源离线时仍能读写歌单。入队和播放时需启用对应音源。
+
+
+自制原生应用可直接依赖本仓库的 `echo-client`，通过同一用户的本地 IPC 调用服务。传入独立 Core 使用的数据库路径即可定位连接。
+
+```rust
+let core = echo_client::Client::new(database_path);
+let commands = core.list_workshop_commands().await?;
+let playlists = core.invoke_workshop_command(
+    "my.playlist-editor", "community.playlist-service", "list", serde_json::json!({"limit": 25}),
+).await?;
+```
+
+终端脚本也能直接枚举命令和调用插件服务。结果输出为 JSON。
+
+```sh
+echo-corectl /path/to/library.sqlite workshop list
+echo-corectl /path/to/library.sqlite workshop invoke community.playlist-service list '{"limit":25}'
+```
+
+### 独立应用 SDK
+
+桌面窗口关闭后，自制播放器、歌单编辑器和后台脚本仍可控制同一用户运行的独立 Core。Node 应用导入 `standalone/core.mjs`，TypeScript 声明随包提供。客户端通过 `echo-corectl` 连接 Core，首次调用时启动一个辅助进程并复用于后续请求。带有本平台辅助程序的 SDK 压缩包解压后可直接使用。其他情况下，把同版本的 `echo-corectl` 放入 PATH，也可以用 `executable` 或环境变量 `ECHO_CORECTL` 指定它的路径。源码构建使用 `cargo build --release -p echo-server -p echo-client --bins`。
+
+```js
+import { createCoreClient } from './standalone/core.mjs';
+
+const core = createCoreClient({ database: '/path/to/library.sqlite', appId: 'studio.my-player', zone: 2 });
+try {
+    const { commands } = await core.describe();  // 当前 Core 实际支持的宿主命令
+    const sources = await core.sources.list();
+    if (sources.length) {
+        const source = sources[0];
+        const result = await core.sources.search(source, 'live', { page: 1, pageSize: 12 });
+        const track = result.tracks[0];
+        if (track) await core.queue.submit({ mode: 'append', tracks: [{ kind: 'source', source, track }] });
+    }
+    console.log(await core.queue.get({ limit: 10 }));
+} finally {
+    core.close();
+}
+```
+
+- `core.invoke(method, input)` 接受能力清单里的宿主命令，同一套 JSON 参数可用于曲库、标签、智能歌单、历史、歌词、封面、播放、队列、输出和 DSP。各命令沿用宿主的校验和版本要求。插件服务可用 `core.commands.invoke(pluginId, commandId, input)` 调用。
+- `for await (const state of core.watch({ signal }))` 先收到当前快照，随后接收所选播放区的状态变化。可读取 `state.playback.track`、`state.playback.positionMs` 和 `state.queue_position`。退出循环或取消信号即可释放订阅。Core 重启后重新建立订阅。命令会话会为后续调用重新发现 Core，发生中断的写入应先读回状态再决定是否重试。
+- `node standalone/player.mjs DATABASE` 列出已启用音源。`node standalone/player.mjs DATABASE PLUGIN PROVIDER "关键词" --zone 2` 显示搜索结果，加 `--append 1` 或 `--play 1` 可选择第一首。
+- Rust 使用 `Client::workshop_host(app_id, method, input)`，状态订阅使用 `Client::subscribe()`。Python、Go 等语言可启动 `echo-corectl DATABASE --zone 2 sdk APP_ID session`，按行发送 `{"method":"queue.get","input":{"limit":10}}`，逐行读取 `{"value":...}` 或 `{"error":"..."}`。一行一个 UTF-8 JSON 对象，按提交顺序应答。一次性调用可用 `sdk APP_ID describe`、`sdk APP_ID call METHOD '[JSON]'`，持续订阅可用 `sdk APP_ID watch`。
+
+外部应用拥有自己的调用标识，插件服务会收到 `app/<appId>`。插件的私有凭据与存储仍由插件通过自己的运行时管理。
+
+### 订阅可用音源和服务命令
+
+播放器和歌单工具连接本机 Core 后，可以用一个订阅维护两份菜单。首次读取立即返回完整目录，之后提供方上线、注销或断开连接时返回新的完整目录。同一批注册的音源和命令一起出现，两者都可以直接传给相应的 SDK 接口。两个播放区看到相同的目录。
+
+```js
+for await (const { sources, commands } of core.watchDiscovery({ signal, reconnect: true })) {
+    updateSourceMenu(sources);  // 每项包含 plugin、provider、title、browse
+    updateServiceMenu(commands); // 每项包含 pluginId、commandId、title
+}
+```
+
+在一个终端运行 `node standalone/player.mjs DATABASE --watch`，在另一个终端启动或退出下面的电台示例，即可看到变化。慢速读者会合并中间变化，直接收到最新目录。每个快照的 `revision` 只在同一次 Core 运行内可比较。退出循环、触发 `AbortSignal` 或关闭客户端会释放订阅。启用 `reconnect: true` 后，可以先于 Core 启动播放器。Core 暂时不可用时，订阅会以 200 毫秒到 5 秒的退避间隔重试；Core 恢复后，同一个循环会收到新实例的完整目录，即使版本号与上次相同。等待期间也可以随时取消。默认设置会在断开时向调用方返回错误。
+
+Rust 可用 `Client::watch_workshop_discovery(true)` 和 `next().await` 自动续接，也可用 `Client::subscribe_workshop_discovery()` 建立单次连接。其他语言可启动 `echo-corectl DATABASE sdk APP_ID watch-discovery`，每次向 stdin 写入一个换行并刷新，再从 stdout 读取一行快照 JSON。追加 `--reconnect` 可跨 Core 重启继续读取。保持 stdin 打开，关闭它即可退订。
+
+### 独立应用提供音源和服务
+
+独立应用在同一用户的本机 Core 上可同时注册多个音源和服务命令。运行 `standalone/station.mjs` 可以把自己的 HTTP(S) 音频流作为音源提供给其他播放器，同时提供一条返回歌单的服务命令。
+
+```sh
+ECHO_STATION_URL='https://your-server.example/live.mp3' node standalone/station.mjs /path/to/library.sqlite '我的电台'
+```
+
+提供方保持运行时，其他播放器用 `sources.list()` 可以看到 `{plugin: "example.station", provider: "radio"}`，搜索、浏览、入队与播放沿用原有接口。歌单工具可调用 `commands.list()` 发现 `playlist` 命令。下面的代码在另一个独立应用中运行。
+
+```js
+const playlist = await player.commands.invoke('example.station', 'playlist');
+await player.queue.submit({ mode: 'append', tracks: playlist.tracks });
+```
+
+作者使用 `await core.provide({ sources, commands })` 发布整组能力。每项提供 `id` 和 `title`。音源实现 `search`、`resolve` 和可选的 `browse`，命令实现 `run(input, {callerPluginId, signal})`。各播放器共享注册表，队列操作作用于调用者选择的播放区。请用稳定的应用、音源与曲目标识，播放时在 `resolve` 中返回最新的流地址。工坊插件也可以通过 `context.sources.list()` 和 `context.commands.core.list()/invoke()` 使用这些能力。
+
+注册成功后返回的 `registration.close()` 可主动撤销整组能力，`core.close()` 或提供方进程退出也会释放注册。相同 ID 的第二个活动实例会收到冲突错误。一个注册连接上逐个分发回调，回调可用独立的控制连接调用其他服务。用 `signal` 中止已取消的异步工作。Core 断开时 `registration.closed` 会拒绝，应用可在 Core 恢复后重新调用 `provide`。
+
+其他语言可运行 `echo-corectl DATABASE sdk APP_ID provide`。stdin 首行写入 `{"sources":[{"id":"radio","title":"Radio","browse":true}],"commands":[{"id":"playlist","title":"Playlist"}]}`，stdout 收到 `{"type":"ready"}` 后开始接收 `{"type":"call","id":1,"method":"command","input":{"id":"playlist","input":null,"callerPluginId":"app/player"}}`。每次回调按原编号回复 `{"id":1,"value":...}` 或 `{"id":1,"error":"..."}`。收到 `{"type":"cancel","id":1}` 时停止该项工作并回复一次，已经回复的编号直接忽略。方法有 `search`、`browse`、`resolve`、`command`。关闭 stdin 即注销。需要立即复用同一 ID 时，发送 `{"type":"release"}` 并等待 `{"type":"released"}`。Rust 提供方使用 `Client::register_workshop_app`，分别通过 `ProviderEvents::next` 与 `ProviderReplies::send` 收发。

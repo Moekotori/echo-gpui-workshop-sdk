@@ -36,6 +36,7 @@
           "description": "Host commands and events required before a native plugin can run.",
           "properties": {
             "commands": { "type": "array", "items": { "type": "string" } },
+            "features": { "type": "array", "items": { "type": "string" } },
             "events": { "type": "array", "items": { "type": "string" } }
           }
         },

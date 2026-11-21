@@ -8,8 +8,13 @@ const MAX_MANIFEST = 256 * 1024;
 const sdkFile = path => new URL(path, import.meta.url);
 const templates = new Map([
     ['page', 'starter'],
+    ['cover-browser', 'cover-browser'],
     ['live-library', 'live-library'],
+    ['playlist-service', 'playlist-service'],
+    ['stream-library', 'stream-library'],
     ['navidrome', 'navidrome'],
+    ['lrc-source', 'lrc-source'],
+    ['mv-source', 'mv-source'],
 ]);
 const help = `ECHO GPUI Workshop SDK
   node sdk.mjs templates
@@ -17,7 +22,8 @@ const help = `ECHO GPUI Workshop SDK
   node sdk.mjs check [project-directory-or-manifest]
   node sdk.mjs check-original <directory-or-package> [--action <id>] [--event <id>] [--json]
   node sdk.mjs capabilities [--original-catalog <path>]
-  node sdk.mjs preview [project-directory-or-manifest] [--page <id>] [--action <method> | --command <id>] [--input <json>] [--fields <json>]
+  node sdk.mjs preview [project-directory-or-manifest] [--page <id>] [--action <method> | --command <id>] [--input <json>] [--fields <json>] [--lyrics <provider-id> --track <json> [--automatic]]
+  node sdk.mjs preview <project> --mv <provider-id> --track <json> [--query <text> [--candidate <id>]]
 
 check reads a native GPUI manifest and checks its entry syntax without starting the plugin.
 preview runs trusted native plugins with a temporary data folder and example host data.
@@ -121,6 +127,11 @@ async function init(directory, id, templateName, schema) {
         [join('content', 'LICENSE'), await readFile(sdkFile('LICENSE'))],
         ['README.md', await readFile(sdkFile('starter/README.md'))],
     ]);
+    if (template === 'cover-browser') {
+        for (const name of ['sleeve-1.jpg', 'sleeve-2.jpg', 'sleeve-3.jpg']) {
+            files.set(join('content', name), await readFile(sdkFile(template + '/' + name)));
+        }
+    }
     await mkdir(directory);
     const written = [];
     const content = join(directory, 'content');
@@ -199,9 +210,19 @@ async function main(args) {
                 command: { type: 'string' },
                 input: { type: 'string' },
                 fields: { type: 'string' },
+                lyrics: { type: 'string' },
+                mv: { type: 'string' },
+                query: { type: 'string' },
+                candidate: { type: 'string' },
+                track: { type: 'string' },
+                automatic: { type: 'boolean' },
             },
         });
         if (positionals.length > 1 || (values.command && (values.page || values.action || values.fields))
+            || ((values.lyrics !== undefined || values.mv !== undefined) !== (values.track !== undefined))
+            || (values.mv && (values.lyrics || values.command))
+            || (!values.mv && (values.query !== undefined || values.candidate !== undefined))
+            || (values.automatic && !values.lyrics) || (values.lyrics && values.command)
             || (!values.command && !values.action && (values.input !== undefined || values.fields))) {
             throw new Error(help);
         }

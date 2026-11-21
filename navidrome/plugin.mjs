@@ -16,9 +16,21 @@ export async function activate({ hostInvoke, pages, sources }) {
             const current = connected();
             const { tracks, more } = await searchSongs(current, query, (page - 1) * pageSize, pageSize, signal);
             return {
-                tracks: tracks.map(song => ({ providerTrackId: song.id, title: song.title, artist: song.artist ?? '' })),
+                tracks: tracks.map(reference),
                 hasMore: more,
             };
+        },
+        async browse({ collectionId, page, pageSize, signal }) {
+            const offset = (page - 1) * pageSize;
+            if (collectionId === null) {
+                const result = await request(connected(), 'getAlbumList2', { type: 'alphabeticalByName', offset, size: pageSize + 1 }, signal);
+                const albums = result.albumList2?.album ?? [];
+                return { tracks: [], collections: albums.slice(0, pageSize).map(a => ({ kind: 'album', id: a.id, title: a.name })),
+                    hasMore: albums.length > pageSize };
+            }
+            const result = await request(connected(), 'getAlbum', { id: collectionId }, signal);
+            const songs = result.album?.song ?? [];
+            return { tracks: songs.slice(offset, offset + pageSize).map(reference), hasMore: offset + pageSize < songs.length };
         },
         async resolve({ providerTrackId, signal }) {
             const current = connected();
@@ -36,7 +48,7 @@ function connected() {
     return account;
 }
 
-export async function handle({ method, input, signal }, { hostInvoke }) {
+export async function handle({ method, input, signal }, { pluginId, queue }) {
     switch (method) {
         case 'page.open': return openPage();
         case 'login': {
@@ -72,8 +84,9 @@ export async function handle({ method, input, signal }, { hostInvoke }) {
         case 'append': {
             const song = songs.find(song => song.id === input.data);
             if (!song) throw new Error('That track is no longer in the visible results.');
-            const track = await resolvedTrack(connected(), song, signal);
-            await hostInvoke('queue.submit', { mode: method, tracks: [{ kind: 'stream', id: song.id, ...track }] });
+            await queue.submit({ mode: method, tracks: [{
+                kind: 'source', source: { plugin: pluginId, provider: 'catalog' }, track: reference(song),
+            }] });
             return null;
         }
         default: throw new Error('Unknown plugin action');
@@ -136,6 +149,10 @@ async function searchSongs(credentials, text, position, limit, signal) {
     }, signal);
     const matches = result.searchResult3?.song ?? [];
     return { tracks: matches.slice(0, limit), more: matches.length > limit };
+}
+
+function reference(song) {
+    return { providerTrackId: song.id, title: song.title, artist: song.artist ?? '', album: song.album ?? '', duration: song.duration ?? 0 };
 }
 
 async function resolvedTrack(credentials, song, signal) {

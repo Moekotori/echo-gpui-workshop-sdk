@@ -1,0 +1,13 @@
+{
+  "type": "echo-workshop-item",
+  "schemaVersion": 1,
+  "id": "community.cover-browser",
+  "title": "唱片架",
+  "version": "1.1.0",
+  "content": { "kind": "plugin-package" },
+  "gpui": {
+    "protocol": 1,
+    "entry": "plugin.mjs",
+    "requires": { "features": ["pages.layout", "pages.window"] }
+  }
+}

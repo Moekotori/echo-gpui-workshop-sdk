@@ -1,0 +1,14 @@
+{
+  "type": "echo-workshop-item",
+  "schemaVersion": 1,
+  "id": "community.open-video-catalog",
+  "title": "开放视频目录",
+  "version": "1.0.0",
+  "content": {
+    "kind": "plugin-package"
+  },
+  "gpui": {
+    "protocol": 1,
+    "entry": "plugin.mjs"
+  }
+}
