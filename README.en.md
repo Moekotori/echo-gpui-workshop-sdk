@@ -149,6 +149,15 @@ List up to four package-relative TTF, OTF, WOFF or WOFF2 resources in `gpui.lyri
 
 Run `node sdk.mjs preview lyrics-view` to try the example with offline data.
 
+### Custom transport in lyrics styles
+
+- `playback.getTransport()` captures `{ state, clock }` together. Use `canToggle`, `showPause`, `canPrevious`, `canNext`, and `canSeek` to render controls for the current source. `playback.onTransportChanged()` supplies the initial state and changes to playback, seeks, or the queue. Use `playback.onClock()` for animated timing.
+- Pass the rendered `clock.trackSequence` to `playback.seekTrack(sequence, seconds)` or `seekTrackBy(sequence, deltaSeconds)`. The host rejects a seek when the song has changed. A lyric line's target is `Math.max(0, (line.timeMs - document.offsetMs) / 1000)`.
+- `queue.getWindow({ queueId: state.queueId, sequence, before: 2, after: 5 })` loads up to 16 rows on either side of the current item. `currentIndex`, `previousIndex`, and `nextIndex` are zero-based queue indices. In shuffle mode, the next index can be outside the window. Fetch it with `queue.get` using the same queue ID. Refresh after a track or queue change.
+- `queue.editItem(queueId, occurrenceId, { action: 'playNext' | 'remove' })` waits for the host and targets one occurrence, even for repeated tracks. Use `queue.playItem(queueId, occurrenceId)` to play it.
+
+The main lyrics example combines transport buttons, a seek slider, line jumps, and queue actions. Preview it with `node sdk.mjs preview lyrics-view --page current-lyrics`. Standalone clients can use the same read and write methods on `core.playback` and `core.queue`.
+
 Register `desktop-lyrics`, `companion-lyrics`, and `lyrics-settings` with `pages.lyricsTargets`. Open a desktop or companion contribution from Plugins to mount it in the corresponding native window. The companion requires a connected external player and provides its current playback and lyric line in `lyricsView.externalPlayback`. A `settingsPage` on a lyrics descriptor links to a `lyrics-settings` page in the same plugin. The native Settings button opens that page in its own window. Use private `storage` to persist its values. With `audio:dsp-ui`, `lyricsView.openVst3Manager` opens an inventory of installed VST3 plug-ins with file reveal.
 
 - A `canvas` layout node draws `rect` and `polyline` commands in GPUI. Coordinates range from 0 to 1. Stroke widths are in logical pixels. Each canvas accepts up to 256 commands and each page up to 16,384 points.

@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "id": "community.lyrics-view-example",
   "title": "Lyrics View Example",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "content": { "kind": "plugin-package" },
   "gpui": {
     "protocol": 1,
@@ -11,8 +11,8 @@
     "lyricsViewPermissions": ["clipboard:write", "window:fullscreen", "audio:dsp-ui"],
     "requires": {
       "features": ["pages.lyricsView", "pages.lyricsTargets", "pages.canvas"],
-      "commands": ["lyrics.getCurrent", "playback.getClock", "artwork.getPalette"],
-      "events": ["lyrics.changed"]
+      "commands": ["lyrics.getCurrent", "playback.getClock", "playback.getTransport", "playback.seekTrack", "playback.control", "queue.getWindow", "queue.playItem", "queue.editItem", "artwork.getPalette"],
+      "events": ["lyrics.changed", "playback.transportChanged"]
     }
   }
 }

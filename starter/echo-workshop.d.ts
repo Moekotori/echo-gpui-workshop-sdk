@@ -617,6 +617,29 @@ export interface PlaybackClock {
     /** Unix timestamp in milliseconds, taken when positionSeconds was sampled. */
     sampledAtMs: number;
 }
+export interface PlaybackTransport {
+    trackSequence: number | null;
+    /** Seek generation, shared with PlaybackClock. */
+    generation: number;
+    title: string;
+    artist: string;
+    status: PlaybackSnapshot['status'];
+    showPause: boolean;
+    canToggle: boolean;
+    canSeek: boolean;
+    canPrevious: boolean;
+    canNext: boolean;
+    mode: PlaybackMode;
+    volume: number;
+    fixedVolume: boolean;
+    queueId: number;
+    /** One-based queue position, or zero. */
+    queuePosition: number;
+    queueLength: number;
+    /** Playback-order indices are zero-based and may be outside the visible window. */
+    previousIndex: number | null;
+    nextIndex: number | null;
+}
 export interface MusicMetadata {
     sequence: number;
     bpm: number | null;
@@ -802,6 +825,22 @@ export interface QueuePage {
     hasNext: boolean;
     items: { title: string; artist: string; occurrenceId?: string | null; reference?: QueueReference | null; catalog: { source: CatalogSource; id: string } | null }[];
 }
+export interface QueueWindow extends QueuePage {
+    trackSequence: number | null;
+    /** Indices in the queue, not in this window. */
+    currentIndex: number | null;
+    previousIndex: number | null;
+    nextIndex: number | null;
+}
+export interface QueueWindowOptions {
+    queueId?: number;
+    sequence?: number;
+    /** 0–16. Defaults to 2. */
+    before?: number;
+    /** 0–16. Defaults to 5. */
+    after?: number;
+}
+export type QueueItemEdit = { action: 'remove' | 'playNext' };
 export interface LyricLine {
     timeMs: number | null;
     endMs: number | null;
@@ -1332,8 +1371,14 @@ export interface WorkshopContext {
         onTrackChanged(listener: (track: CurrentTrack | null) => Awaitable<void>): () => void;
         /** Initial clock sample and changed samples at up to 20 Hz. Keep the callback lightweight. */
         onClock(listener: (clock: PlaybackClock) => Awaitable<void>): () => void;
+        /** Initial state followed by transport changes. Position ticks use onClock. */
+        onTransportChanged(listener: (state: PlaybackTransport) => Awaitable<void>): () => void;
         get(): Promise<PlaybackSnapshot>;
         getClock(): Promise<PlaybackClock>;
+        getTransport(): Promise<{ state: PlaybackTransport; clock: PlaybackClock }>;
+        /** Seeks only while sequence still identifies the current, seekable track. */
+        seekTrack(sequence: number, seconds: number): Promise<null>;
+        seekTrackBy(sequence: number, seconds: number): Promise<null>;
         getMusicMetadata(sequence: number): Promise<MusicMetadata | null>;
         getCurrentTrack(): Promise<CurrentTrack | null>;
         getRate(): Promise<number>;
@@ -1390,6 +1435,7 @@ export interface WorkshopContext {
         onChanged(listener: (event: QueueChange) => Awaitable<void>): () => void;
         /** limit is 1–256 and defaults to 256. Supply queueId when continuing a previous page. */
         get(options?: { offset?: number; queueId?: number; limit?: number }): Promise<QueuePage>;
+        getWindow(options?: QueueWindowOptions): Promise<QueueWindow>;
         search(query: string, options?: { source?: CatalogSource; remoteId?: string }): Promise<QueueSearchHit[]>;
         playAt(queueId: number, index: number): Promise<null>;
         readonly saved: {
@@ -1402,6 +1448,7 @@ export interface WorkshopContext {
         };
         playItem(queueId: number, occurrenceId: string): Promise<null>;
         edit(queueId: number, edit: QueueEdit): Promise<null>;
+        editItem(queueId: number, occurrenceId: string, edit: QueueItemEdit): Promise<null>;
         submit(request: { mode: 'play' | 'append' | 'playNext'; tracks: QueueItem[]; index?: number }): Promise<null>;
     };
     readonly pages: {

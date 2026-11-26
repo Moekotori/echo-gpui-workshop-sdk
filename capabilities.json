@@ -104,6 +104,8 @@
     "library.smart.freeze",
     "playback.get",
     "playback.getClock",
+    "playback.getTransport",
+    "playback.seekTrack",
     "playback.getMusicMetadata",
     "playback.getCurrentTrack",
     "playback.getRate",
@@ -148,6 +150,8 @@
     "queue.saved.remove",
     "queue.saved.undoRemove",
     "queue.get",
+    "queue.getWindow",
+    "queue.editItem",
     "queue.playItem",
     "queue.edit",
     "lyrics.get",
@@ -188,7 +192,8 @@
     "audio.signalPathChanged",
     "lyrics.changed",
     "playback.clock",
-    "artwork.paletteChanged"
+    "artwork.paletteChanged",
+    "playback.transportChanged"
   ],
   "maxQueueItems": 1000,
   "queueCapacity": 10000,

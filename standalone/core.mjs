@@ -134,10 +134,12 @@ export function createCoreClient({ database, appId, zone = 1, executable = defau
         },
         queue: {
             get: (options = {}) => invoke('queue.get', options),
+            getWindow: (options = {}) => invoke('queue.getWindow', options),
             search: (query, options = {}) => invoke('queue.search', { ...options, query }),
             playAt: (queueId, index) => invoke('queue.playAt', { queueId, index }),
             playItem: (queueId, occurrenceId) => invoke('queue.playItem', { queueId, occurrenceId }),
             edit: (queueId, edit) => invoke('queue.edit', { queueId, edit }),
+            editItem: (queueId, occurrenceId, edit) => invoke('queue.editItem', { queueId, occurrenceId, edit }),
             submit: request => invoke('queue.submit', request),
             saved: {
                 list: () => invoke('queue.saved.list'),
@@ -149,6 +151,9 @@ export function createCoreClient({ database, appId, zone = 1, executable = defau
         },
         playback: {
             getClock: () => invoke('playback.getClock'),
+            getTransport: () => invoke('playback.getTransport'),
+            seekTrack: (sequence, seconds) => invoke('playback.seekTrack', { sequence, seconds }),
+            seekTrackBy: (sequence, seconds) => invoke('playback.seekTrack', { sequence, seconds, relative: true }),
             getMusicMetadata: sequence => invoke('playback.getMusicMetadata', { sequence }),
             get: () => invoke('playback.get'),
             getCurrentTrack: () => invoke('playback.getCurrentTrack'),

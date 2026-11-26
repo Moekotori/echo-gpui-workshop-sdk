@@ -838,6 +838,15 @@ node sdk.mjs preview my-library --command inspect-session --input '{"query":"fir
 
 运行 `node sdk.mjs preview lyrics-view` 查看示例。安装宿主请从「插件」打开示例页面。
 
+#### 在歌词样式里实现播放控件
+
+- `playback.getTransport()` 在同一次读取中返回 `{ state, clock }`。用 `canToggle`、`showPause`、`canPrevious`、`canNext` 和 `canSeek` 显示适合当前来源的按钮。`playback.onTransportChanged()` 推送初始状态、换歌、跳转、播放模式和队列相关变化。逐字动画继续使用 `playback.onClock()`，无需每帧读取队列。
+- 把渲染时的 `clock.trackSequence` 原样传给 `playback.seekTrack(sequence, seconds)` 或 `seekTrackBy(sequence, deltaSeconds)`。宿主提交时再次校验曲目，旧歌词行或进度条的点击不会跳转新歌。由歌词行换算目标时，用 `Math.max(0, (line.timeMs - document.offsetMs) / 1000)`。
+- 用 `queue.getWindow({ queueId: state.queueId, sequence, before: 2, after: 5 })` 读取当前项附近的队列。前后各最多 16 项。`currentIndex`、`previousIndex`、`nextIndex` 是整个队列的从零开始的索引。随机播放下，`nextIndex` 可能在窗口外，可用相同 `queueId` 通过 `queue.get` 单独读取。曲目或队列变化后重新读取。
+- `queue.editItem(queueId, occurrenceId, { action: 'playNext' | 'remove' })` 等宿主处理完成再返回。即使相同曲目出现多次，也能按出现 ID 精确操作。点播继续用 `queue.playItem(queueId, occurrenceId)`。
+
+主歌词页示例组合了播放按钮、可拖动的时间轴、逐行跳转和队列操作。运行 `node sdk.mjs preview lyrics-view --page current-lyrics` 查看可用动作。独立客户端也可通过 `core.playback` 和 `core.queue` 调用这些读写方法。
+
 #### 桌面歌词、伴侣与设置页
 
 声明 `pages.lyricsTargets` 后可以注册 `desktop-lyrics`、`companion-lyrics` 和 `lyrics-settings`。从插件页打开桌面或伴侣贡献，宿主会使用对应的原生窗口。伴侣需要先连接外部播放器，回调中的 `lyricsView.externalPlayback` 提供外部曲目信息与当前歌词行。桌面与伴侣关闭插件页面后恢复内置歌词。

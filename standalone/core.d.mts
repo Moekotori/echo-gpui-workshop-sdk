@@ -58,7 +58,7 @@ export interface CoreClient {
     queue: Omit<WorkshopContext['queue'], 'onChanged' | 'saved'> & {
         saved: Omit<WorkshopContext['queue']['saved'], 'onChanged'>;
     };
-    playback: Omit<WorkshopContext['playback'], 'onChanged' | 'onTrackChanged' | 'onClock'>;
+    playback: Omit<WorkshopContext['playback'], 'onChanged' | 'onTrackChanged' | 'onClock' | 'onTransportChanged'>;
     library: Pick<WorkshopContext['library'], 'query' | 'track' | 'summary' | 'album' | 'albumForTrack' | 'artist'
         | 'relatedAlbums' | 'albumVersions' | 'similarLocalTracks'
         | 'artistByName' | 'artistCredits' | 'albumCredits' | 'trackArtistCredits'
