@@ -166,6 +166,14 @@ Register `desktop-lyrics`, `companion-lyrics`, and `lyrics-settings` with `pages
 
 Try `--page desktop-lyrics`, `--page companion-lyrics`, and `--page lyrics-settings` with the example.
 
+### Custom WGSL
+
+Check `host.describe` for `pages.wgsl`. Windows and Linux render a `shader` layout node through the native GPU path. One node per page may define `fn echoColor(uv: vec2<f32>, time: f32) -> vec3<f32>` in up to 8 KiB of WGSL. The host supplies normalized coordinates and the node's optional `time`. Heights are 16–720 logical pixels. The function can use math and branches under the host's limits for resources, loops, and entry points. See `--page shader` for the example. Run the host's `--workshop test` to validate shader compilation.
+
+### VST3 effects and vendor editors
+
+With `audio:dsp-ui`, a host button can open the VST3 manager using `lyricsView.openVst3Manager`. A matching Windows Audio Host runs one installed VST3 effect during local ECHO Pro mono or stereo PCM playback. Start playback, then use the manager to load, open the vendor editor, bypass, or unload the effect. Reload after the PCM format changes. `audio.vst3.getStatus()` reports the current slot. The host owns effect selection and the editor window.
+
 ## Build and verify
 
 The [SDK ZIP](https://github.com/Moekotori/echo-gpui-workshop-sdk/releases/latest) includes an offline tool.

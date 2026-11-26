@@ -64,6 +64,8 @@ export type CanvasCommand =
 export type WorkshopNode =
     | { type: 'row' | 'column'; children: WorkshopNode[]; style?: WorkshopBoxStyle }
     | { type: 'canvas'; height: number; commands: CanvasCommand[] }
+    /** A bounded WGSL echoColor(uv: vec2<f32>, time: f32) -> vec3<f32> function. */
+    | { type: 'shader'; height: number; wgsl: string; time?: number }
     | { type: 'text'; text: string; role?: 'title' | 'heading' | 'body' | 'muted' | 'accent'; size?: number; color?: string; fontFamily?: string; truncate?: boolean }
     | { type: 'image'; image: string; height: number; width?: number; radius?: number; alt?: string; contain?: boolean }
     | { type: 'field'; id: string; compact?: boolean; hideLabel?: boolean }
@@ -1397,6 +1399,9 @@ export interface WorkshopContext {
         getLyrics(): Promise<{ lines: LyricLine[]; trackOffsetMs: number }>;
     };
     readonly audio: {
+        readonly vst3: {
+            getStatus(): Promise<{ available: boolean; name: string | null; bypassed: boolean; formatReady: boolean; editorOpen: boolean }>;
+        };
         readonly canvas: {
             /** Start current-track analysis for up to 4096 buckets. Release the handle when done. */
             start(options: { sequence: number; buckets?: number; spectrogram?: boolean }): Promise<{ id: string }>;

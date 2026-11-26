@@ -215,6 +215,7 @@ export function createCoreClient({ database, appId, zone = 1, executable = defau
             restorePlaylistRecovery: ({ kind, id }) => invoke('library.restorePlaylistRecovery', { kind, id }),
         },
         audio: {
+            vst3: { getStatus: () => invoke('audio.vst3.getStatus', {}) },
             canvas: {
                 start: options => invoke('audio.canvas.start', options),
                 status: id => invoke('audio.canvas.status', { id }),

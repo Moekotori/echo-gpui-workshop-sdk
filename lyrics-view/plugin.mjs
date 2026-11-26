@@ -1,8 +1,9 @@
 let stops = [];
 
-export function activate({ pages, lyrics, playback, queue, storage, artwork }) {
+export async function activate({ pages, lyrics, playback, queue, storage, artwork, hostInvoke }) {
     const id = 'current-lyrics';
     const settingsId = 'lyrics-settings';
+    const shaderReady = (await hostInvoke('host.describe')).features.includes('pages.wgsl');
     const showTranslation = async () => await storage.get('translation') !== false;
     const toggleTranslation = pages.registerAction('toggle-translation', async () => {
         await storage.set('translation', !await showTranslation());
@@ -37,7 +38,13 @@ export function activate({ pages, lyrics, playback, queue, storage, artwork }) {
         layout: { body: { type: 'column', children: [
             ['current-lyrics', 'Current lyrics'], ['desktop-lyrics', 'Desktop lyrics'],
             ['companion-lyrics', 'Companion lyrics'], [settingsId, 'Lyrics view settings'],
+            ...(shaderReady ? [['shader', 'WGSL example']] : []),
         ].map(([page, label]) => ({ type: 'pageLink', page, label })) } },
+    }));
+    if (shaderReady) pages.register('shader', { title: 'WGSL example', presentation: 'lyrics-view' }, () => ({
+        title: 'WGSL example', layout: { body: { type: 'shader', height: 360,
+            wgsl: 'fn echoColor(uv: vec2<f32>, time: f32) -> vec3<f32> { let t = smoothstep(0.0, 1.0, length(uv - vec2(0.4, 0.5))); return mix(vec3(0.18, 0.48, 0.77), vec3(0.19, 0.08, 0.32), t); }',
+        } },
     }));
     async function currentLyrics({ lyricsView }) {
         const { state: transport, clock } = await playback.getTransport();

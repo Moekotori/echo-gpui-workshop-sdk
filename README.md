@@ -861,6 +861,14 @@ node sdk.mjs preview my-library --command inspect-session --input '{"query":"fir
 
 示例可分别用 `--page desktop-lyrics`、`--page companion-lyrics` 和 `--page lyrics-settings` 预览。
 
+#### 自定义 WGSL
+
+先检查 `host.describe` 是否包含 `pages.wgsl`。Windows 和 Linux 宿主通过原生 GPU 合成 `shader` 布局节点。每页支持一个节点，`height` 为 16–720 逻辑像素。源码上限为 8 KiB，仅声明一个 `fn echoColor(uv: vec2<f32>, time: f32) -> vec3<f32>`，宿主传入归一化坐标和节点的可选 `time`。节点支持纯数学表达式和条件分支，资源绑定、循环和自定义入口由宿主限制。可用 `--page shader` 查看示例文档结构，再用宿主 `--workshop test` 编译验证。
+
+#### VST3 音效与厂商编辑器
+
+授权 `audio:dsp-ui` 的页面可通过宿主按钮 `lyricsView.openVst3Manager` 打开管理器。Windows 的配套 Audio Host 支持本地 ECHO Pro 单声道或立体声 PCM 中的一个 VST3 音效插槽。开始播放后，从已安装清单手动加载，再打开厂商编辑器、旁通或卸载。`audio.vst3.getStatus()` 可读当前插槽状态。输出格式改变后，在管理器中重新加载。VST3 加载路径与界面由宿主管理，插件本身无需提供二进制或路径。
+
 ### 编辑本机曲目歌词
 
 用 `context.lyrics.get(trackId?)` 读取当前曲目或指定本机曲目的歌词。
