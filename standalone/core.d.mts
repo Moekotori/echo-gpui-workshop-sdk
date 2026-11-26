@@ -70,7 +70,7 @@ export interface CoreClient {
     };
     artwork: Pick<WorkshopContext['artwork'], 'track' | 'album' | 'artist' | 'current' | 'getPalette'>;
     history: WorkshopContext['history'];
-    lyrics: Omit<WorkshopContext['lyrics'], 'registerProvider' | 'onChanged'>;
+    lyrics: Omit<WorkshopContext['lyrics'], 'registerProvider' | 'onChanged' | 'stageRuns'>;
     sleepTimer: Omit<WorkshopContext['sleepTimer'], 'onTick'>;
     commands: WorkshopContext['commands']['core'];
     close(): void;

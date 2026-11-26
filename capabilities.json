@@ -7,6 +7,7 @@
     "pages.lyricsView",
     "pages.lyricsTargets",
     "pages.canvas",
+    "pages.lyricsStage",
     "pages.wgsl",
     "pages.vst3Inventory",
     "sources.catalog",

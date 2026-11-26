@@ -61,11 +61,48 @@ export type CanvasCommand =
     | { type: 'rect'; x: number; y: number; width: number; height: number; color: string }
     | { type: 'polyline'; points: [number, number][]; color: string; width: number };
 
+export interface LyricsStageRun {
+    text: string;
+    /** Milliseconds on the stage clock. Omit to keep the run in its base ink. */
+    startMs?: number;
+    /** Omit for a discrete highlight at startMs. */
+    endMs?: number;
+}
+export interface LyricsStageKeyframe {
+    atMs: number;
+    /** Relative offset in stage widths or heights. */
+    x?: number;
+    y?: number;
+    opacity?: number;
+    /** Interpolation into this keyframe. */
+    easing?: 'linear' | 'easeInOut' | 'easeOut';
+}
+export type LyricsStageDrawing = { type: 'shape'; command: CanvasCommand }
+    | { type: 'text'; x: number; y: number; size: number; ink: string; highlight: string;
+        fontFamily?: string; align?: 'start' | 'center' | 'end'; runs: LyricsStageRun[] };
+export interface WorkshopLyricsStage {
+    type: 'lyricsStage';
+    sequence: number;
+    height: number;
+    offsetMs?: number;
+    layers: { draw: LyricsStageDrawing; keyframes?: LyricsStageKeyframe[] }[];
+    hotspots?: { id: string; rect: [x: number, y: number, width: number, height: number]; action: WorkshopAction }[];
+    click?: WorkshopAction;
+}
+export interface LyricsStageClick {
+    sequence: number;
+    hotspot: string | null;
+    x: number;
+    y: number;
+    input: Json;
+}
+
 export type WorkshopNode =
     | { type: 'row' | 'column'; children: WorkshopNode[]; style?: WorkshopBoxStyle }
     | { type: 'canvas'; height: number; commands: CanvasCommand[] }
     /** A bounded WGSL echoColor(uv: vec2<f32>, time: f32) -> vec3<f32> function. */
     | { type: 'shader'; height: number; wgsl: string; time?: number }
+    | WorkshopLyricsStage
     | { type: 'text'; text: string; role?: 'title' | 'heading' | 'body' | 'muted' | 'accent'; size?: number; color?: string; fontFamily?: string; truncate?: boolean }
     | { type: 'image'; image: string; height: number; width?: number; radius?: number; alt?: string; contain?: boolean }
     | { type: 'field'; id: string; compact?: boolean; hideLabel?: boolean }
@@ -1189,6 +1226,8 @@ export interface WorkshopContext {
         request(url: string, options?: WorkshopNetworkOptions): Promise<WorkshopNetworkResponse>;
     };
     readonly lyrics: {
+        /** Converts document text to stage runs while preserving spaces and punctuation. */
+        stageRuns(line: LyricLine): LyricsStageRun[];
         registerProvider(id: string, descriptor: Descriptor, lookup: (request: {
             track: { trackId: string | null; title: string; artist: string; album: string | null; durationSeconds: number | null };
             signal: AbortSignal;

@@ -1,3 +1,5 @@
+import { registerDesignerStage } from './stage.mjs';
+
 let stops = [];
 
 export async function activate({ pages, lyrics, playback, queue, storage, artwork, hostInvoke }) {
@@ -36,7 +38,7 @@ export async function activate({ pages, lyrics, playback, queue, storage, artwor
     pages.register('home', { title: 'Lyrics view example' }, () => ({
         title: 'Lyrics view example',
         layout: { body: { type: 'column', children: [
-            ['current-lyrics', 'Current lyrics'], ['desktop-lyrics', 'Desktop lyrics'],
+            ['designer-stage', 'Custom lyric stage'], ['current-lyrics', 'Current lyrics'], ['desktop-lyrics', 'Desktop lyrics'],
             ['companion-lyrics', 'Companion lyrics'], [settingsId, 'Lyrics view settings'],
             ...(shaderReady ? [['shader', 'WGSL example']] : []),
         ].map(([page, label]) => ({ type: 'pageLink', page, label })) } },
@@ -115,7 +117,8 @@ export async function activate({ pages, lyrics, playback, queue, storage, artwor
         return { title: external?.title || 'Companion lyrics', description: external?.artist || '',
             rows: external?.line ? [{ title: external.line.text, detail: external.line.translation ?? '' }] : [] };
     });
-    stops = [lyrics.onChanged(() => { pages.invalidate(id); pages.invalidate('desktop-lyrics'); }),
+    const stopStage = registerDesignerStage({ pages, lyrics, playback }, settingsId);
+    stops = [lyrics.onChanged(() => { pages.invalidate(id); pages.invalidate('desktop-lyrics'); }), stopStage,
         playback.onTransportChanged(() => pages.invalidate(id))];
 }
 

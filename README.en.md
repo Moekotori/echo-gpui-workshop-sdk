@@ -158,6 +158,16 @@ Run `node sdk.mjs preview lyrics-view` to try the example with offline data.
 
 The main lyrics example combines transport buttons, a seek slider, line jumps, and queue actions. Preview it with `node sdk.mjs preview lyrics-view --page current-lyrics`. Standalone clients can use the same read and write methods on `core.playback` and `core.queue`.
 
+### Authoring a custom lyric stage
+
+Declare `pages.lyricsStage` and place a `lyricsStage` layout node in a native main or desktop lyrics page. Bind `sequence` to the current track. Pass the lyric document's `offsetMs` to offset the shared stage clock. The stage stops drawing if the sequence changes.
+
+- Layers are painted in array order. Text layers support normalized position, alignment, size, font family, base ink, and highlight ink. `lyrics.stageRuns(line)` preserves spacing and punctuation when converting lyric words to runs. You can author runs directly. A start and end time sweep through the run. A start time alone applies a discrete highlight. The host shapes the entire line together.
+- Shape layers draw the existing canvas rectangles and polylines. Ordered keyframes animate relative X/Y offsets and opacity, with linear, ease-in-out, or ease-out interpolation. Pause holds the pose and seeking recomputes it. Reduced motion uses discrete keyframes and highlight updates.
+- Hotspots take a normalized rectangle and a `pages.registerAction` callback. The optional `click` action handles the rest of the stage. Callback `data` contains `{ sequence, hotspot, x, y, input }`. Keyboard activation uses the center of the focused region.
+
+Each stage accepts 32–1200 logical pixels of height, 64 layers, 32 keyframes per layer, and 32 hotspots. GPUI paints word progress and layer animation. Invalidate the page when the visible lines or scene change. Run `node sdk.mjs preview lyrics-view --page designer-stage` to see the example definition.
+
 Register `desktop-lyrics`, `companion-lyrics`, and `lyrics-settings` with `pages.lyricsTargets`. Open a desktop or companion contribution from Plugins to mount it in the corresponding native window. The companion requires a connected external player and provides its current playback and lyric line in `lyricsView.externalPlayback`. A `settingsPage` on a lyrics descriptor links to a `lyrics-settings` page in the same plugin. The native Settings button opens that page in its own window. Use private `storage` to persist its values. With `audio:dsp-ui`, `lyricsView.openVst3Manager` opens an inventory of installed VST3 plug-ins with file reveal.
 
 - A `canvas` layout node draws `rect` and `polyline` commands in GPUI. Coordinates range from 0 to 1. Stroke widths are in logical pixels. Each canvas accepts up to 256 commands and each page up to 16,384 points.

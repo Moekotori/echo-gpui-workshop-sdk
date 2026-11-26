@@ -847,6 +847,16 @@ node sdk.mjs preview my-library --command inspect-session --input '{"query":"fir
 
 主歌词页示例组合了播放按钮、可拖动的时间轴、逐行跳转和队列操作。运行 `node sdk.mjs preview lyrics-view --page current-lyrics` 查看可用动作。独立客户端也可通过 `core.playback` 和 `core.queue` 调用这些读写方法。
 
+#### 自绘歌词舞台
+
+声明 `pages.lyricsStage`，在原生主歌词页或桌面歌词页的 `layout` 中使用 `lyricsStage` 节点。作者可以自行排列主歌词、翻译、音译、装饰和进度。舞台以指定的 `sequence` 跟随当前曲目，换歌后旧舞台停绘。`offsetMs` 为舞台时钟补正，通常传当前歌词文档的偏移。
+
+- `layers` 按顺序叠加。`draw.type: 'text'` 支持位置、对齐、字号、包内字体、基础色与高亮色。`lyrics.stageRuns(line)` 把文档转为保留空格和标点的逐字片段。插件也可以自己提供 `runs`。给片段设置 `startMs` 和 `endMs` 可扫过该词，只有 `startMs` 则瞬时点亮。宿主对整行文字统一排版。
+- `draw.type: 'shape'` 使用画布的矩形或折线。每层可设置按毫秒排序的 `keyframes`，分别控制相对 X/Y 位移和透明度。关键帧间支持 `linear`、`easeInOut` 和 `easeOut`。暂停保留姿态，跳转重算姿态，减少动态效果打开时按关键帧与词边界更新。
+- `hotspots` 定义独立的可点击区域，`click` 处理舞台其余区域。坐标和大小以舞台的 0–1 比例表示。用 `pages.registerAction` 注册回调，`data` 包含 `{ sequence, hotspot, x, y, input }`。`input` 是动作声明中的自定义数据，键盘触发时坐标取区域中心。
+
+舞台高度为 32–1200 逻辑像素，最多 64 层、每层 32 个关键帧和 32 个热点。逐字推进和动画由 GPUI 绘制。仅在切换可见歌词行或换场时调用 `pages.invalidate()` 即可。运行 `node sdk.mjs preview lyrics-view --page designer-stage` 查看示例，也可在已安装的插件中打开「Custom lyric stage」。
+
 #### 桌面歌词、伴侣与设置页
 
 声明 `pages.lyricsTargets` 后可以注册 `desktop-lyrics`、`companion-lyrics` 和 `lyrics-settings`。从插件页打开桌面或伴侣贡献，宿主会使用对应的原生窗口。伴侣需要先连接外部播放器，回调中的 `lyricsView.externalPlayback` 提供外部曲目信息与当前歌词行。桌面与伴侣关闭插件页面后恢复内置歌词。
