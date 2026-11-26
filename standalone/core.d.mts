@@ -65,7 +65,9 @@ export interface CoreClient {
         | 'albums' | 'artists' | 'trackVersions' | 'editTrackVersions' | 'linkedTracks' | 'searchTracks' | 'playlistItems'
         | 'findTrackInPlaylists' | 'appendPlaylistTracks' | 'transferPlaylistItems' | 'playlistGroups'
         | 'playlistsInGroup' | 'editPlaylistGroup' | 'playlistRecovery' | 'restorePlaylistRecovery'>;
-    audio: Omit<WorkshopContext['audio'], 'onAnalysis' | 'onSignalPathChanged'>;
+    audio: Omit<WorkshopContext['audio'], 'onAnalysis' | 'onSignalPathChanged' | 'canvas'> & {
+        canvas: Omit<WorkshopContext['audio']['canvas'], 'registerCachedAsset'>;
+    };
     artwork: Pick<WorkshopContext['artwork'], 'track' | 'album' | 'artist' | 'current' | 'getPalette'>;
     history: WorkshopContext['history'];
     lyrics: Omit<WorkshopContext['lyrics'], 'registerProvider' | 'onChanged'>;

@@ -5,6 +5,9 @@
     "pages.layout",
     "pages.window",
     "pages.lyricsView",
+    "pages.lyricsTargets",
+    "pages.canvas",
+    "pages.vst3Inventory",
     "sources.catalog",
     "sources.collectionPlayback",
     "commands.core",
@@ -116,6 +119,7 @@
     "audio.getAnalysis",
     "audio.getSignalPath",
     "audio.canvas.start",
+    "audio.canvas.registerCachedAsset",
     "audio.canvas.status",
     "audio.canvas.release",
     "audio.visualization.open",
@@ -183,7 +187,8 @@
     "artwork.artistChanged",
     "audio.signalPathChanged",
     "lyrics.changed",
-    "playback.clock"
+    "playback.clock",
+    "artwork.paletteChanged"
   ],
   "maxQueueItems": 1000,
   "queueCapacity": 10000,

@@ -838,6 +838,20 @@ node sdk.mjs preview my-library --command inspect-session --input '{"query":"fir
 
 运行 `node sdk.mjs preview lyrics-view` 查看示例。安装宿主请从「插件」打开示例页面。
 
+#### 桌面歌词、伴侣与设置页
+
+声明 `pages.lyricsTargets` 后可以注册 `desktop-lyrics`、`companion-lyrics` 和 `lyrics-settings`。从插件页打开桌面或伴侣贡献，宿主会使用对应的原生窗口。伴侣需要先连接外部播放器，回调中的 `lyricsView.externalPlayback` 提供外部曲目信息与当前歌词行。桌面与伴侣关闭插件页面后恢复内置歌词。
+
+`settingsPage` 指向同一插件注册的 `lyrics-settings`。宿主在歌词页提供设置按钮，打开独立原生设置窗。返回普通 `WorkshopPage` 的表单和按钮，并通过私有 `storage` 持久化。页面在授权 `audio:dsp-ui` 后可使用 `lyricsView.openVst3Manager`，查看标准目录中的已安装 VST3 插件并在系统文件管理器定位。
+
+#### 原生画布、封面配色和在线缓存
+
+- 在 `WorkshopPage.layout` 中使用 `canvas` 节点。`commands` 接受 `rect` 和 `polyline`，坐标在 0 到 1 之间，线宽使用逻辑像素。单个画布最多 256 条命令，单页最多 16,384 个点，由 GPUI 绘制。
+- `artwork.getPalette(sequence)` 同时返回均色和最多四个 `#RRGGBB` 主色。`artwork.onPaletteChanged` 提供曲目序号及相应调色板，可跟踪切歌和封面变化。
+- 当前在线音源插件可用 `audio.canvas.registerCachedAsset(sequence, relativePath)` 登记私有数据目录内已经缓存的完整 FLAC、WAV、MP3、Ogg 或 Opus 文件。之后复用 `audio.canvas.start/status/release` 分析。宿主按当前曲目序号和音源归属验证注册，其他插件通过分析结果读取数据。
+
+示例可分别用 `--page desktop-lyrics`、`--page companion-lyrics` 和 `--page lyrics-settings` 预览。
+
 ### 编辑本机曲目歌词
 
 用 `context.lyrics.get(trackId?)` 读取当前曲目或指定本机曲目的歌词。

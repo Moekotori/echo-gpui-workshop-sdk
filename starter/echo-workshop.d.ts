@@ -57,8 +57,13 @@ export interface WorkshopBoxStyle {
 export type WorkshopGlyph =
     | 'search' | 'user' | 'folder' | 'list' | 'grid' | 'download' | 'check'
     | 'play' | 'pause' | 'refresh' | 'left' | 'right' | 'settings' | 'close' | 'music';
+export type CanvasCommand =
+    | { type: 'rect'; x: number; y: number; width: number; height: number; color: string }
+    | { type: 'polyline'; points: [number, number][]; color: string; width: number };
+
 export type WorkshopNode =
     | { type: 'row' | 'column'; children: WorkshopNode[]; style?: WorkshopBoxStyle }
+    | { type: 'canvas'; height: number; commands: CanvasCommand[] }
     | { type: 'text'; text: string; role?: 'title' | 'heading' | 'body' | 'muted' | 'accent'; size?: number; color?: string; fontFamily?: string; truncate?: boolean }
     | { type: 'image'; image: string; height: number; width?: number; radius?: number; alt?: string; contain?: boolean }
     | { type: 'field'; id: string; compact?: boolean; hideLabel?: boolean }
@@ -961,6 +966,10 @@ export interface CurrentLyricsDocument {
 }
 
 export interface LyricsViewLayout {
+    target: 'main' | 'desktop' | 'companion' | 'settings';
+    externalPlayback: {
+        title: string; artist: string; album: string; playing: boolean; durationMs: number; line: LyricLine | null;
+    } | null;
     /** Usable content area in logical pixels, after reserved chrome. */
     width: number;
     height: number;
@@ -985,6 +994,12 @@ export interface LyricsViewLayout {
 }
 
 export type LyricsViewPermission = 'clipboard:write' | 'window:fullscreen' | 'audio:dsp-ui' | 'lyrics:import' | 'ui:system-fonts';
+
+export interface CoverPalette {
+    average: [number, number, number];
+    /** Up to four #RRGGBB swatches extracted from the artwork. */
+    colors: string[];
+}
 
 export type EnrichmentTag = 'Title' | 'Artist' | 'Album' | 'AlbumArtist' | 'Genre' | 'Year' | 'Track' | 'Disc';
 
@@ -1293,7 +1308,8 @@ export interface WorkshopContext {
         /** Pass CurrentTrack.sequence to reject a result after a track change. */
         current(sequence?: number): Promise<WorkshopArtwork | null>;
         /** Returns the current cover's average RGB without transferring the artwork image. */
-        getPalette(sequence?: number): Promise<{ average: [number, number, number] } | null>;
+        getPalette(sequence?: number): Promise<CoverPalette | null>;
+        onPaletteChanged(listener: (event: { sequence: number | null; palette: CoverPalette | null }) => Awaitable<void>): () => void;
     };
     readonly history: {
         list(options?: HistoryQuery): Promise<HistoryPage>;
@@ -1339,6 +1355,8 @@ export interface WorkshopContext {
         readonly canvas: {
             /** Start current-track analysis for up to 4096 buckets. Release the handle when done. */
             start(options: { sequence: number; buckets?: number; spectrogram?: boolean }): Promise<{ id: string }>;
+            /** Current source provider only. Register a complete file relative to the plugin's data directory. */
+            registerCachedAsset(sequence: number, relativePath: string): Promise<null>;
             status(id: string): Promise<CanvasStatus>;
             release(id: string): Promise<null>;
         };
@@ -1394,7 +1412,8 @@ export interface WorkshopContext {
         }) => Awaitable<WorkshopPage | void | null>): string;
         invalidate(pageId?: string): void;
         register(id: string, descriptor: Descriptor & (
-            { presentation: 'lyrics-view'; window?: never; transparent?: boolean; permissions?: LyricsViewPermission[] } |
+            { presentation: 'lyrics-view' | 'desktop-lyrics' | 'companion-lyrics'; window?: never; transparent?: boolean; permissions?: LyricsViewPermission[]; settingsPage?: string } |
+            { presentation: 'lyrics-settings'; window?: never; permissions?: LyricsViewPermission[] } |
             { presentation?: never; window?: { width?: number; height?: number } }
         ), open: (request: { signal: AbortSignal; windowId: string | null; lyricsView: LyricsViewLayout | null }) => Awaitable<WorkshopPage>): void;
     };

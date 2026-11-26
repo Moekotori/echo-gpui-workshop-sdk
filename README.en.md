@@ -149,6 +149,14 @@ List up to four package-relative TTF, OTF, WOFF or WOFF2 resources in `gpui.lyri
 
 Run `node sdk.mjs preview lyrics-view` to try the example with offline data.
 
+Register `desktop-lyrics`, `companion-lyrics`, and `lyrics-settings` with `pages.lyricsTargets`. Open a desktop or companion contribution from Plugins to mount it in the corresponding native window. The companion requires a connected external player and provides its current playback and lyric line in `lyricsView.externalPlayback`. A `settingsPage` on a lyrics descriptor links to a `lyrics-settings` page in the same plugin. The native Settings button opens that page in its own window. Use private `storage` to persist its values. With `audio:dsp-ui`, `lyricsView.openVst3Manager` opens an inventory of installed VST3 plug-ins with file reveal.
+
+- A `canvas` layout node draws `rect` and `polyline` commands in GPUI. Coordinates range from 0 to 1. Stroke widths are in logical pixels. Each canvas accepts up to 256 commands and each page up to 16,384 points.
+- `artwork.getPalette(sequence)` includes the average and up to four `#RRGGBB` swatches. `artwork.onPaletteChanged` observes palette changes for the current track sequence.
+- The current online source provider can register a complete cached FLAC, WAV, MP3, Ogg, or Opus file with `audio.canvas.registerCachedAsset(sequence, relativePath)`. The path is relative to the provider's private data directory. Use the existing `start`, `status`, and `release` methods to analyze it.
+
+Try `--page desktop-lyrics`, `--page companion-lyrics`, and `--page lyrics-settings` with the example.
+
 ## Build and verify
 
 The [SDK ZIP](https://github.com/Moekotori/echo-gpui-workshop-sdk/releases/latest) includes an offline tool.

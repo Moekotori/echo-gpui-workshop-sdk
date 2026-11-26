@@ -8,9 +8,9 @@
   "gpui": {
     "protocol": 1,
     "entry": "plugin.mjs",
-    "lyricsViewPermissions": ["clipboard:write", "window:fullscreen"],
+    "lyricsViewPermissions": ["clipboard:write", "window:fullscreen", "audio:dsp-ui"],
     "requires": {
-      "features": ["pages.lyricsView"],
+      "features": ["pages.lyricsView", "pages.lyricsTargets", "pages.canvas"],
       "commands": ["lyrics.getCurrent", "playback.getClock", "artwork.getPalette"],
       "events": ["lyrics.changed"]
     }
