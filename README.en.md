@@ -199,6 +199,15 @@ saved playlist limit. Use the installed host to test rule queries with your libr
 
 Declare each command your plugin needs in `gpui.requires.commands`, for example `library.albumVersions`. Standalone apps can check support with `core.describe()` and call the same methods on `core.library`.
 
+### Artist and music credits
+
+- `library.artistByName(name, source?)` resolves a catalog artist using the host's name and alias rules. It returns `null` when no artist matches.
+- `library.artistCredits(name, source?)` looks up roles such as composer, conductor, and performer by credited name and returns how many tracks are associated with each role.
+- `library.albumCredits(id, source?)` reads people, works, and movement relations, plus named credits where legacy credit data is available.
+- `library.trackArtistCredits(id)` reads the local track's original artist credit, resolved names, suggested split, and manual override status.
+
+The first three methods default to `Local` and accept `Legacy`. Plugins and standalone clients can check for the corresponding host commands by name.
+
 ### Original API 2 catalog lookup
 
 API 2 plugins use `echo.library.getSummary()`, `getAlbum(id)`, `getAlbumForTrack(trackId)`,

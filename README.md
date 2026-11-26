@@ -723,6 +723,15 @@ node sdk.mjs check-original ./my-original-plugin/content/community.echo --json
 
 插件可在 `gpui.requires.commands` 声明实际使用的命令，例如 `library.albumVersions`。独立应用可通过 `core.describe()` 检查命令，并用 `core.library` 下的同名方法调用。
 
+### 艺人和作品署名
+
+- `library.artistByName(name, source?)` 按宿主曲库的艺人名称和别名规则查找条目。找不到时返回 `null`。
+- `library.artistCredits(name, source?)` 按署名读取作曲、指挥、演出等角色及每个角色关联的曲目数。
+- `library.albumCredits(id, source?)` 读取专辑中的人员、作品和乐章关系，以及旧库已有的制作人员名单。
+- `library.trackArtistCredits(id)` 读取本机曲目的原始艺人署名、解析后的艺人名称、拆分建议及手动覆盖状态。
+
+前三项默认使用 `Local`，也支持 `Legacy`。插件和独立客户端都可以按名称检查对应宿主能力。
+
 ### 原版曲库查询
 
 原版插件声明 `library:read` 后可用 `echo.library.getSummary()`、`getAlbum(id)`、

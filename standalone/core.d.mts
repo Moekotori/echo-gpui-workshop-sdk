@@ -61,6 +61,7 @@ export interface CoreClient {
     playback: Omit<WorkshopContext['playback'], 'onChanged' | 'onTrackChanged'>;
     library: Pick<WorkshopContext['library'], 'query' | 'track' | 'summary' | 'album' | 'albumForTrack' | 'artist'
         | 'relatedAlbums' | 'albumVersions' | 'similarLocalTracks'
+        | 'artistByName' | 'artistCredits' | 'albumCredits' | 'trackArtistCredits'
         | 'albums' | 'artists' | 'trackVersions' | 'editTrackVersions' | 'linkedTracks' | 'searchTracks' | 'playlistItems'>;
     audio: Omit<WorkshopContext['audio'], 'onAnalysis' | 'onSignalPathChanged'>;
     artwork: Pick<WorkshopContext['artwork'], 'track' | 'album' | 'artist' | 'current'>;

@@ -411,6 +411,29 @@ export interface AlbumVersions {
     /** Measured loudness range in LU, keyed by album ID. Unmeasured albums are omitted. */
     loudnessRangeByAlbum: Record<string, number>;
 }
+export interface MusicCreditRelation {
+    kind: 'Work' | 'Movement' | 'Composer' | 'Conductor' | 'Performer' | 'Contributor';
+    id: string;
+    title: string;
+    trackCount: number;
+    /** Parent work ID when the catalog links this movement to a work. */
+    parent: string | null;
+}
+export interface AlbumCredits {
+    /** Catalog relations for credited people, works and movements. */
+    relations: MusicCreditRelation[];
+    /** Additional role and name pairs from available legacy credit data. */
+    namedCredits: { role: string; name: string }[];
+}
+export interface TrackArtistCredits {
+    /** Artist credit as stored by the catalog. */
+    artist: string;
+    /** Resolved artist names using the catalog rules and any manual override. */
+    names: string[];
+    /** Suggested names for a manual split. */
+    split: string[];
+    overridden: boolean;
+}
 export interface ArtistDetails {
     trackCount: number;
     albumCount: number;
@@ -1035,6 +1058,13 @@ export interface WorkshopContext {
         /** Up to 24 similar tracks, ranked using the Local catalog. */
         similarLocalTracks(id: string): Promise<CatalogEntry[]>;
         artist(id: string): Promise<LocalCatalogArtist | null>;
+        /** Resolves a name using the catalog's artist identity rules. */
+        artistByName(name: string, source?: CatalogSource): Promise<CatalogEntry | null>;
+        /** Looks up roles by the credited name. */
+        artistCredits(name: string, source?: CatalogSource): Promise<MusicCreditRelation[]>;
+        albumCredits(id: string, source?: CatalogSource): Promise<AlbumCredits>;
+        /** Reads the artist names of a local track. */
+        trackArtistCredits(id: string): Promise<TrackArtistCredits>;
         albumFavoriteStates(ids: string[]): Promise<Record<string, boolean>>;
         /** Searches all candidates. A smart playlist's saved result limit does not cap search pages. */
         searchTracks(rules: SmartRules, page?: { page?: number; pageSize?: number }): Promise<TrackSearchPage>;
