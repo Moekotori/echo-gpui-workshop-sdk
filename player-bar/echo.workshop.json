@@ -1,0 +1,14 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Moekotori/echo-gpui-workshop-sdk/main/schemas/manifest.schema.json",
+  "type": "echo-workshop-item",
+  "schemaVersion": 1,
+  "id": "community.player-bar-example",
+  "title": "Studio Player Bar",
+  "version": "1.0.0",
+  "content": { "kind": "plugin-package" },
+  "gpui": {
+    "protocol": 1,
+    "entry": "plugin.mjs",
+    "requires": { "features": ["actions.native", "playerBar.layout"] }
+  }
+}

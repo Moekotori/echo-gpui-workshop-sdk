@@ -1,0 +1,16 @@
+{
+  "type": "echo-workshop-item",
+  "schemaVersion": 1,
+  "id": "community.library-enrichment",
+  "title": "曲库补全",
+  "version": "1.2.0",
+  "content": { "kind": "plugin-package" },
+  "gpui": {
+    "protocol": 1,
+    "entry": "plugin.mjs",
+    "requires": {
+      "features": ["pages.layout", "library.enrichment", "network.request"],
+      "commands": ["library.enrichment.scan", "library.enrichment.fillTags", "lyrics.fillMissing", "artwork.previewUrl", "network.request"]
+    }
+  }
+}

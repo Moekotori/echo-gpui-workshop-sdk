@@ -24,6 +24,8 @@ const help = `ECHO GPUI Workshop SDK
   node sdk.mjs capabilities [--original-catalog <path>]
   node sdk.mjs preview [project-directory-or-manifest] [--page <id>] [--action <method> | --command <id>] [--input <json>] [--fields <json>] [--lyrics <provider-id> --track <json> [--automatic]]
   node sdk.mjs preview <project> --mv <provider-id> --track <json> [--query <text> [--candidate <id>]]
+  node sdk.mjs preview <project> [--player-action <id> | --track-action <id>]
+  node sdk.mjs preview <project> --player-layout <id>
 
 check reads a native GPUI manifest and checks its entry syntax without starting the plugin.
 preview runs trusted native plugins with a temporary data folder and example host data.
@@ -216,9 +218,15 @@ async function main(args) {
                 candidate: { type: 'string' },
                 track: { type: 'string' },
                 automatic: { type: 'boolean' },
+                'player-action': { type: 'string' },
+                'player-layout': { type: 'string' },
+                'track-action': { type: 'string' },
             },
         });
+        const surfaces = [values['player-action'], values['player-layout'], values['track-action']];
         if (positionals.length > 1 || (values.command && (values.page || values.action || values.fields))
+            || (surfaces.some(value => value !== undefined) && [...surfaces, values.command, values.action, values.page, values.mv, values.lyrics]
+                .filter(value => value !== undefined).length !== 1)
             || ((values.lyrics !== undefined || values.mv !== undefined) !== (values.track !== undefined))
             || (values.mv && (values.lyrics || values.command))
             || (!values.mv && (values.query !== undefined || values.candidate !== undefined))

@@ -5,8 +5,14 @@
     "pages.layout",
     "pages.window",
     "sources.catalog",
+    "sources.collectionPlayback",
     "commands.core",
-    "queue.references"
+    "queue.references",
+    "library.enrichment",
+    "network.request",
+    "artwork.artistProvider",
+    "actions.native",
+    "playerBar.layout"
   ],
   "commands": [
     "host.describe",
@@ -18,15 +24,24 @@
     "commands.list",
     "commands.invoke",
     "library.query",
+    "library.enrichment.scan",
+    "library.enrichment.fillTags",
+    "network.request",
     "library.track",
     "library.summary",
     "library.album",
     "library.albumForTrack",
+    "library.relatedAlbums",
+    "library.albumVersions",
+    "library.similarLocalTracks",
     "library.artist",
     "library.albumFavoriteStates",
     "library.searchTracks",
     "library.tracksByIds",
     "library.trackSkipStats",
+    "library.trackVersions",
+    "library.editTrackVersions",
+    "library.linkedTracks",
     "library.albumTracks",
     "library.artistTracks",
     "library.artistAlbums",
@@ -80,7 +95,13 @@
     "playback.setSpeed",
     "playback.getSegmentLoop",
     "playback.editSegmentLoop",
+    "playback.bookmarks.list",
+    "playback.bookmarks.edit",
+    "playback.savedSegments.list",
+    "playback.savedSegments.edit",
+    "playback.savedSegments.play",
     "audio.getAnalysis",
+    "audio.getSignalPath",
     "audio.dsp.getGraph",
     "audio.dsp.applyGraph",
     "audio.dsp.getRackOrder",
@@ -92,7 +113,9 @@
     "audio.output.setOutput",
     "artwork.track",
     "artwork.album",
+    "artwork.artist",
     "artwork.current",
+    "artwork.previewUrl",
     "queue.search",
     "queue.playAt",
     "queue.saved.list",
@@ -106,6 +129,7 @@
     "lyrics.get",
     "lyrics.readTrack",
     "lyrics.applyCustom",
+    "lyrics.fillMissing",
     "lyrics.setOffset",
     "lyrics.setCurrentOffset",
     "lyrics.markInstrumental",
@@ -133,9 +157,11 @@
     "audio.analysis",
     "library.likedChanged",
     "sleepTimer.tick",
-    "queue.saved.changed"
+    "queue.saved.changed",
+    "artwork.artistChanged",
+    "audio.signalPathChanged"
   ],
-  "maxQueueItems": 256,
+  "maxQueueItems": 1000,
   "queueCapacity": 10000,
   "original": {
     "apiVersion": 2,
@@ -146,6 +172,8 @@
       "audio:output-read",
       "audio:output-write",
       "audio:spectrum",
+      "background:run",
+      "fs:export",
       "fs:plugin",
       "library:control",
       "library:path",
@@ -158,33 +186,23 @@
       "network:request",
       "playback:control",
       "playback:read",
+      "presence:control",
       "queue:control",
       "queue:read",
       "sleep-timer:control",
+      "sources:direct",
       "sources:provide",
+      "sources:relay",
       "system:full"
     ],
-    "packageRestrictedPermissions": [
-      "background:run",
-      "presence:control",
-      "sources:direct"
-    ],
-    "restrictedPermissionPackages": {
-      "sources:direct": [
-        "echo.playlist-directory",
-        "echo.maimai"
-      ],
-      "background:run": [
-        "echo.playlist-directory",
-        "echo.maimai"
-      ],
-      "presence:control": [
-        "echo.maimai"
-      ]
-    },
+    "packageRestrictedPermissions": [],
+    "restrictedPermissionPackages": {},
     "builtInPackages": {
-      "songbook": "echo.playlist-directory",
       "ototabi": "echo.maimai"
+    },
+    "networkHostLimits": {
+      "standard": 32,
+      "trustedSource": 64
     },
     "actionPermissions": {
       "audio:dsp:applyGraph": [
@@ -212,6 +230,9 @@
       "audio:getSpectrum": [
         "audio:spectrum"
       ],
+      "audio:output:getSignalPath": [
+        "audio:output-read"
+      ],
       "audio:output:getStatus": [
         "audio:output-read"
       ],
@@ -223,6 +244,9 @@
       ],
       "audio:output:setOutput": [
         "audio:output-write"
+      ],
+      "files:export": [
+        "fs:export"
       ],
       "host:getCapabilities": [],
       "host:getFeatureAvailability": [],
@@ -265,6 +289,9 @@
       "library:getArtistAlbums": [
         "library:read"
       ],
+      "library:getArtistArtwork": [
+        "library:read"
+      ],
       "library:getArtistTracks": [
         "library:read"
       ],
@@ -289,6 +316,9 @@
       "library:getLikedTracks": [
         "library:read"
       ],
+      "library:getLinkedTracks": [
+        "library:read"
+      ],
       "library:getPlaylistItems": [
         "library:read"
       ],
@@ -299,6 +329,9 @@
         "library:read"
       ],
       "library:getTrack": [
+        "library:read"
+      ],
+      "library:getTrackVersions": [
         "library:read"
       ],
       "library:getTracks": [
@@ -376,6 +409,37 @@
       "lyrics:setOffset": [
         "lyrics:write"
       ],
+      "mediaImport.cancel": [
+        "system:full",
+        "network:request",
+        "fs:plugin"
+      ],
+      "mediaImport.chooseDirectory": [
+        "system:full",
+        "network:request",
+        "fs:plugin"
+      ],
+      "mediaImport.lookup": [
+        "system:full",
+        "network:request",
+        "fs:plugin"
+      ],
+      "mediaImport.start": [
+        "system:full",
+        "network:request",
+        "fs:plugin"
+      ],
+      "mediaImport.state": [
+        "system:full",
+        "network:request",
+        "fs:plugin"
+      ],
+      "network:cancel": [
+        "network:request"
+      ],
+      "network:get": [
+        "network:request"
+      ],
       "playback:cycleRepeat": [
         "playback:control"
       ],
@@ -417,6 +481,15 @@
       ],
       "playback:toggleShuffle": [
         "playback:control"
+      ],
+      "presence:steam:clearTemporaryStatus": [
+        "presence:control"
+      ],
+      "presence:steam:getStatus": [
+        "presence:control"
+      ],
+      "presence:steam:setTemporaryStatus": [
+        "presence:control"
       ],
       "queue:clear": [
         "queue:control"
@@ -460,6 +533,14 @@
       "queue:reorder": [
         "queue:control"
       ],
+      "sandbox.destroy": [
+        "system:full",
+        "network:request"
+      ],
+      "sandbox.evaluate": [
+        "system:full",
+        "network:request"
+      ],
       "sleep-timer:cancel": [
         "sleep-timer:control"
       ],
@@ -468,6 +549,18 @@
       ],
       "sleep-timer:start": [
         "sleep-timer:control"
+      ],
+      "sources.cancelCollection": [
+        "playback:control"
+      ],
+      "sources.collectionStatus": [
+        "playback:control"
+      ],
+      "sources.playCollection": [
+        "playback:control"
+      ],
+      "sources:relay": [
+        "sources:relay"
       ],
       "storage:cache:get": [
         "fs:plugin"
@@ -511,6 +604,9 @@
       "storage:get": [
         "fs:plugin"
       ],
+      "storage:isSecure": [
+        "fs:plugin"
+      ],
       "storage:records:get": [
         "fs:plugin"
       ],
@@ -532,7 +628,48 @@
       "trusted:invoke": [
         "system:full"
       ],
-      "ui:notify": []
+      "ui:notify": [],
+      "ui:openPanel": [],
+      "web.cancelRequests": [
+        "system:full",
+        "network:request",
+        "fs:plugin"
+      ],
+      "web.close": [
+        "system:full",
+        "network:request",
+        "fs:plugin"
+      ],
+      "web.configure": [
+        "system:full",
+        "network:request",
+        "fs:plugin"
+      ],
+      "web.fetchJson": [
+        "system:full",
+        "network:request",
+        "fs:plugin"
+      ],
+      "web.fetchText": [
+        "system:full",
+        "network:request",
+        "fs:plugin"
+      ],
+      "web.logout": [
+        "system:full",
+        "network:request",
+        "fs:plugin"
+      ],
+      "web.open": [
+        "system:full",
+        "network:request",
+        "fs:plugin"
+      ],
+      "web.state": [
+        "system:full",
+        "network:request",
+        "fs:plugin"
+      ]
     },
     "eventPermissions": {
       "playback:status": [
@@ -553,6 +690,9 @@
       "audio:spectrum": [
         "audio:spectrum"
       ],
+      "audio:signal-path:changed": [
+        "audio:output-read"
+      ],
       "sleep-timer:tick": [
         "sleep-timer:control"
       ]
@@ -561,7 +701,10 @@
       "commands": 64,
       "sourceProviders": 32,
       "lyricsProviders": 32,
-      "settings": 16
+      "settings": 16,
+      "panels": 16,
+      "playerBarActions": 16,
+      "trackContextMenus": 16
     },
     "hostActions": [
       "audio:dsp:applyGraph",
@@ -572,6 +715,7 @@
       "audio:dsp:setModule",
       "audio:dsp:setRackOrder",
       "audio:getSpectrum",
+      "audio:output:getSignalPath",
       "audio:output:getStatus",
       "audio:output:listDevices",
       "audio:output:refreshDevices",
@@ -591,6 +735,7 @@
       "library:getAlbums",
       "library:getArtist",
       "library:getArtistAlbums",
+      "library:getArtistArtwork",
       "library:getArtistTracks",
       "library:getArtists",
       "library:getGenre",
@@ -599,10 +744,12 @@
       "library:getGenres",
       "library:getLikedTrackIds",
       "library:getLikedTracks",
+      "library:getLinkedTracks",
       "library:getPlaylistItems",
       "library:getPlaylists",
       "library:getSummary",
       "library:getTrack",
+      "library:getTrackVersions",
       "library:getTracks",
       "library:getTracksByIds",
       "library:playlists:createSmart",
@@ -642,6 +789,9 @@
       "playback:setVolume",
       "playback:stop",
       "playback:toggleShuffle",
+      "presence:steam:clearTemporaryStatus",
+      "presence:steam:getStatus",
+      "presence:steam:setTemporaryStatus",
       "queue:clear",
       "queue:enqueueTrack",
       "queue:get",
@@ -678,13 +828,38 @@
       "storage:records:set"
     ],
     "runnerActions": [
+      "files:export",
+      "mediaImport.cancel",
+      "mediaImport.chooseDirectory",
+      "mediaImport.lookup",
+      "mediaImport.start",
+      "mediaImport.state",
+      "network:cancel",
+      "network:get",
+      "sandbox.destroy",
+      "sandbox.evaluate",
+      "sources.cancelCollection",
+      "sources.collectionStatus",
+      "sources.playCollection",
+      "sources:relay",
       "storage:get",
+      "storage:isSecure",
       "storage:remove",
       "storage:set",
       "trusted:invoke",
-      "ui:notify"
+      "ui:notify",
+      "ui:openPanel",
+      "web.cancelRequests",
+      "web.close",
+      "web.configure",
+      "web.fetchJson",
+      "web.fetchText",
+      "web.logout",
+      "web.open",
+      "web.state"
     ],
     "events": [
+      "audio:signal-path:changed",
       "audio:spectrum",
       "library:changed",
       "library:liked-changed",

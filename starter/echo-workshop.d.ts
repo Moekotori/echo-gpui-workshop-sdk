@@ -27,42 +27,66 @@ export type WorkshopFieldControl =
 export interface WorkshopField {
     id: string;
     label: string;
+    placeholder?: string;
     value?: string;
     secret?: boolean;
     advanced?: boolean;
     control?: WorkshopFieldControl;
+    /** Run an action when Enter submits a text field. */
+    submit?: WorkshopFieldCommit;
 }
 
 export interface WorkshopBoxStyle {
     gap?: number;
     padding?: number;
+    paddingX?: number;
+    paddingY?: number;
+    minHeight?: number;
     grow?: boolean;
     surface?: boolean;
     radius?: number;
     width?: number;
     background?: string;
+    tint?: string;
+    nowrap?: boolean;
+    border?: boolean;
+    borderBottom?: boolean;
     align?: 'start' | 'center' | 'end' | 'stretch';
     justify?: 'start' | 'center' | 'end' | 'spaceBetween';
 }
+export type WorkshopGlyph =
+    | 'search' | 'user' | 'folder' | 'list' | 'grid' | 'download' | 'check'
+    | 'play' | 'pause' | 'refresh' | 'left' | 'right' | 'settings' | 'close' | 'music';
 export type WorkshopNode =
     | { type: 'row' | 'column'; children: WorkshopNode[]; style?: WorkshopBoxStyle }
-    | { type: 'text'; text: string; role?: 'title' | 'heading' | 'body' | 'muted' | 'accent'; size?: number; color?: string }
-    | { type: 'image'; image: string; height: number; alt?: string; contain?: boolean }
-    | { type: 'field'; id: string }
-    | { type: 'button'; action: WorkshopAction }
+    | { type: 'text'; text: string; role?: 'title' | 'heading' | 'body' | 'muted' | 'accent'; size?: number; color?: string; truncate?: boolean }
+    | { type: 'image'; image: string; height: number; width?: number; radius?: number; alt?: string; contain?: boolean }
+    | { type: 'field'; id: string; compact?: boolean; hideLabel?: boolean }
+    | { type: 'button'; action: WorkshopAction; appearance?: 'primary' | 'quiet' | 'outline' | 'tab'; icon?: WorkshopGlyph; iconOnly?: boolean; selected?: boolean }
     | { type: 'pressable'; action: WorkshopAction; children: WorkshopNode[]; style?: WorkshopBoxStyle }
-    | { type: 'pageLink'; page: string; label: string }
+    | { type: 'pageLink'; page: string; label: string; icon?: WorkshopGlyph }
+    | { type: 'icon'; glyph: WorkshopGlyph; size?: number }
+    | { type: 'rhythmStage' }
     | { type: 'divider' };
 export interface WorkshopLayout {
     /** Change the key to reset scrolling when switching detail, filter or page. */
     key?: string;
     body?: WorkshopNode;
-    grid?: { minItemWidth: number; items: WorkshopNode[] };
+    grid?: { minItemWidth: number; maxColumns?: number; gap?: number; items: WorkshopNode[] };
+    maxWidth?: number;
+    accent?: string;
     /** Reference reusable PNG or JPEG data URLs by key. */
     images?: Record<string, string>;
 }
 
 export interface WorkshopPage {
+    /** Optional playback-synchronized lane display. See original/README.md for the note encoding. */
+    rhythmPreview?: {
+        trackId: string;
+        lanes: number;
+        leadMs: number;
+        notes: string;
+    };
     layout?: WorkshopLayout;
     title: string;
     description?: string;
@@ -196,12 +220,16 @@ export interface StreamTrack {
     bearer?: string;
 }
 
+export type SourceCollectionPlayback =
+    | { state: 'idle' | 'preparing' | 'started' | 'cancelled' }
+    | { state: 'error'; error: string };
+
 export interface SearchSource {
     search(request: { query: string; page: number; pageSize: number; signal: AbortSignal }):
         Awaitable<{ tracks: TrackReference[]; hasMore?: boolean }>;
     browse?(request: { collectionId: string | null; page: number; pageSize: number; signal: AbortSignal }):
         Awaitable<{ tracks: TrackReference[]; collections?: SourceCollection[]; hasMore?: boolean }>;
-    resolve(request: { providerTrackId: string; signal: AbortSignal }): Awaitable<StreamTrack>;
+    resolve(request: { providerTrackId: string; needArtwork?: boolean; signal: AbortSignal }): Awaitable<StreamTrack>;
 }
 
 interface TagLookup {
@@ -238,6 +266,7 @@ interface HostDescription {
     protocol: number;
     commands: string[];
     events: string[];
+    /** Maximum number of tracks per queue.submit call. */
     maxQueueItems: number;
     queueCapacity: number;
 }
@@ -372,6 +401,15 @@ export interface AlbumDetails {
     unplayed: number | null;
     quality: string | null;
     withLyrics: number | null;
+}
+export interface AlbumVersions {
+    primaryAlbumId: string | null;
+    /** Linked editions. The Local catalog includes the queried edition in this list when grouped. */
+    members: CatalogEntry[];
+    /** Catalog matches for an edition that has no version group. */
+    suggestions: CatalogEntry[];
+    /** Measured loudness range in LU, keyed by album ID. Unmeasured albums are omitted. */
+    loudnessRangeByAlbum: Record<string, number>;
 }
 export interface ArtistDetails {
     trackCount: number;
@@ -586,6 +624,33 @@ export interface AudioOutputStatus {
         format: string | null;
     } | null;
 }
+export interface AudioSignalPath {
+    status: PlaybackSnapshot['status'];
+    trackSequence: number | null;
+    input: 'local' | 'remoteLibrary' | 'online' | 'airPlay' | 'dlna' | 'listeningRoom' | null;
+    route: AudioOutputStatus['route'];
+    source: { codec: string | null; sampleRate: number | null; bitDepth: number | null; channels: number | null };
+    output: {
+        name: string;
+        backend: string;
+        mode: AudioOutputMode | null;
+        sampleRate: number | null;
+        hardwareSampleRate: number | null;
+        sampleRateReadbackValid: boolean | null;
+        channels: number | null;
+        bufferFrames: number | null;
+        format: string | null;
+    } | null;
+    processing: {
+        dspActive: boolean;
+        preampDb: number | null;
+        replayGainDb: number | null;
+        pcmResampleRate: number | null;
+        nativeDsdRate: number | null;
+    };
+    bufferMs: number | null;
+    underruns: number | null;
+}
 export type PlaybackCommand =
     | { action: 'toggle' | 'pause' | 'resume' | 'previous' | 'next' | 'stop' | 'toggleShuffle' | 'cycleRepeat' }
     | { action: 'seek' | 'seekBy'; seconds: number }
@@ -780,6 +845,129 @@ export interface WorkshopTrackLyrics {
     })[];
 }
 
+export type EnrichmentTag = 'Title' | 'Artist' | 'Album' | 'AlbumArtist' | 'Genre' | 'Year' | 'Track' | 'Disc';
+
+export interface EnrichmentTrack {
+    id: string;
+    title: string;
+    artist: string;
+    album: string;
+    duration: number;
+    missingCover: boolean;
+    missingLyrics: boolean;
+    missingTags: EnrichmentTag[];
+    fileTagsWritable: boolean;
+    accessible: boolean;
+}
+
+export interface EnrichmentPage {
+    tracks: EnrichmentTrack[];
+    next: string | null;
+}
+
+export interface EnrichmentTagChange {
+    tags?: [EnrichmentTag, string[]][];
+    coverUrl?: string;
+}
+
+export interface EnrichmentTagOutcome {
+    fields: EnrichmentTag[];
+    cover: boolean;
+    queued: boolean;
+    originalSyncError: string | null;
+}
+
+export type WorkshopProviderLyrics = Omit<WorkshopLyricsCandidate, 'title' | 'artist' | 'album' | 'durationSeconds'>;
+
+export interface WorkshopNetworkOptions {
+    /** Accept, Accept-Language, Content-Type, Referer, Origin and User-Agent. */
+    headers?: Record<string, string>;
+    /** A UTF-8 body selects POST. Omit to send GET. */
+    body?: string;
+}
+
+export interface WorkshopNetworkResponse {
+    status: number;
+    url: string;
+    body: string;
+}
+
+export interface VersionTrack {
+    id: string;
+    title: string;
+    artist: string;
+    album: string | null;
+    durationSeconds: number;
+    playable: boolean;
+    codec: string | null;
+    sampleRate: number | null;
+    bitDepth: number | null;
+    bitrate: number | null;
+}
+
+export interface TrackVersions {
+    members: { track: VersionTrack; sourceName: string | null }[];
+    preferred: string | null;
+    suggestions: VersionTrack[];
+    manual: boolean;
+    preferencePinned: boolean;
+    sharedRecording: boolean;
+    family: { preferredGroup: string | null; versions: { groupId: string; label: string; track: VersionTrack }[] } | null;
+    /** Opaque version used to reject edits to a changed group. */
+    revision: string;
+}
+
+export type TrackVersionEdit =
+    | { action: 'add' | 'remove' | 'prefer'; trackId: string }
+    | { action: 'useBestQuality' };
+
+export interface PlaybackBookmark {
+    id: string;
+    label: string;
+    /** Seconds within the track. */
+    position: number;
+}
+
+export interface SavedSegment {
+    id: string;
+    track: string;
+    name: string;
+    title: string;
+    artist: string;
+    start: number;
+    end: number;
+    available: boolean;
+}
+
+export type SavedSegmentEdit =
+    | { action: 'save'; trackId: string; name: string; start: number; end: number }
+    | { action: 'rename'; id: string; name: string }
+    | { action: 'relink'; id: string; trackId: string }
+    | { action: 'remove'; id: string };
+
+export interface TrackMenuTarget {
+    id: string;
+    source: CatalogSource;
+    title: string;
+    artist: string;
+    album: string | null;
+    durationSeconds: number;
+}
+
+export type PlayerBarIcon = 'listMusic' | 'bookmark' | 'heart' | 'radio' | 'clock' | 'star';
+
+export type PlayerBarItem =
+    | { type: 'track' | 'previous' | 'playPause' | 'next' | 'seek' | 'like'
+        | 'lyrics' | 'queue' | 'volume' | 'connect' | 'spacer' }
+    | { type: 'action'; id: string };
+
+export interface SurfaceActionResult {
+    /** Page registered by this plugin. */
+    page?: string;
+    /** Message of up to 512 UTF-8 bytes. */
+    notice?: string;
+}
+
 export interface WorkshopContext {
     readonly pluginId: string;
     readonly contentRoot: string;
@@ -799,6 +987,10 @@ export interface WorkshopContext {
         set(key: string, value: string): Promise<null>;
         remove(key: string): Promise<null>;
     };
+    readonly network: {
+        /** Public HTTPS, same-host redirects, ECHO proxy and offline policy. */
+        request(url: string, options?: WorkshopNetworkOptions): Promise<WorkshopNetworkResponse>;
+    };
     readonly lyrics: {
         registerProvider(id: string, descriptor: Descriptor, lookup: (request: {
             track: { trackId: string | null; title: string; artist: string; album: string | null; durationSeconds: number | null };
@@ -808,6 +1000,8 @@ export interface WorkshopContext {
             exact: boolean;
         }) => Awaitable<WorkshopLyricsCandidate[]>): void;
         get(trackId?: string): Promise<WorkshopTrackLyrics | null>;
+        /** Saves a provider result only while the track has no lyrics or explicit edit. */
+        fillMissing(trackId: string, lyrics: WorkshopProviderLyrics): Promise<null>;
         applyCustom(trackId: string, text: string, format?: LyricsDocumentFormat): Promise<WorkshopTrackLyrics>;
         setOffset(trackId: string, offsetMs: number): Promise<WorkshopTrackLyrics>;
         setCurrentOffset(offsetMs: number): Promise<WorkshopTrackLyrics>;
@@ -822,6 +1016,12 @@ export interface WorkshopContext {
         onTick(listener: (event: { remainingMs: number }) => Awaitable<void>): () => void;
     };
     readonly library: {
+        readonly enrichment: {
+            /** Checks up to 24 local tracks from an exclusive cursor. */
+            scan(after?: string | null): Promise<EnrichmentPage>;
+            /** Fills empty file tags, or embeds a cover if the track lacks one. */
+            fillTags(trackId: string, change: EnrichmentTagChange): Promise<EnrichmentTagOutcome>;
+        };
         onChanged(listener: (event: LibraryChange) => Awaitable<void>): () => void;
         onFavoritesChanged(listener: (event: LibraryChange) => Awaitable<void>): () => void;
         query(options?: CatalogQuery): Promise<CatalogPage>;
@@ -829,6 +1029,11 @@ export interface WorkshopContext {
         summary(): Promise<LocalCatalogSummary>;
         album(id: string): Promise<LocalCatalogAlbum | null>;
         albumForTrack(trackId: string): Promise<LocalCatalogAlbum | null>;
+        /** Up to 12 other catalog albums by the album artist. */
+        relatedAlbums(id: string, source?: CatalogSource): Promise<CatalogEntry[]>;
+        albumVersions(id: string, source?: CatalogSource): Promise<AlbumVersions>;
+        /** Up to 24 similar tracks, ranked using the Local catalog. */
+        similarLocalTracks(id: string): Promise<CatalogEntry[]>;
         artist(id: string): Promise<LocalCatalogArtist | null>;
         albumFavoriteStates(ids: string[]): Promise<Record<string, boolean>>;
         /** Searches all candidates. A smart playlist's saved result limit does not cap search pages. */
@@ -837,6 +1042,11 @@ export interface WorkshopContext {
         tracksByIds(ids: string[]): Promise<CatalogEntry[]>;
         /** Recorded local catalog skips and the latest skip's UTC timestamp. */
         trackSkipStats(id: string): Promise<{ skipCount: number; lastSkippedAt: string | null }>;
+        trackVersions(id: string, source?: CatalogSource): Promise<TrackVersions>;
+        /** Edit the current version group of a local track. */
+        editTrackVersions(id: string, revision: string, edit: TrackVersionEdit): Promise<null>;
+        /** Tracks in the order used for linked playback. */
+        linkedTracks(id: string, source?: CatalogSource): Promise<VersionTrack[]>;
         albums(options?: CatalogPageOptions): Promise<CatalogPage>;
         albumTracks(id: string, options?: CatalogPageOptions): Promise<CatalogPage>;
         artists(options?: CatalogPageOptions): Promise<CatalogPage>;
@@ -905,8 +1115,19 @@ export interface WorkshopContext {
         };
     };
     readonly artwork: {
+        previewUrl(url: string): Promise<WorkshopArtwork | null>;
         track(id: string, source?: CatalogSource): Promise<WorkshopArtwork | null>;
         album(id: string, source?: CatalogSource): Promise<WorkshopArtwork | null>;
+        /** Returns a saved artist portrait, or null if the artist has none. */
+        artist(id: string, source?: CatalogSource): Promise<WorkshopArtwork | null>;
+        onArtistChanged(listener: (change: { revision: string }) => Awaitable<void>): () => void;
+        /** Register during activate. The host requests portraits for artists missing one. */
+        registerArtistProvider(id: string, options: { title: string }, lookup: (input: {
+            artist: { id: string; name: string; source: CatalogSource };
+            signal: AbortSignal;
+        }) => Awaitable<({ artistName: string } & (
+            { imageUrl: string; dataUrl?: never } | { dataUrl: string; imageUrl?: never }
+        )) | null>): void;
         /** Pass CurrentTrack.sequence to reject a result after a track change. */
         current(sequence?: number): Promise<WorkshopArtwork | null>;
     };
@@ -915,6 +1136,18 @@ export interface WorkshopContext {
         review(options?: HistoryReviewQuery): Promise<HistoryReview>;
     };
     readonly playback: {
+        readonly bookmarks: {
+            list(id: string, source?: CatalogSource): Promise<PlaybackBookmark[]>;
+            add(sequence: number): Promise<PlaybackBookmark[]>;
+            jump(sequence: number, bookmarkId: string): Promise<PlaybackBookmark[]>;
+            rename(track: { id: string; source?: CatalogSource }, bookmarkId: string, label: string): Promise<PlaybackBookmark[]>;
+            remove(track: { id: string; source?: CatalogSource }, bookmarkId: string): Promise<PlaybackBookmark[]>;
+        };
+        readonly savedSegments: {
+            list(options?: { page?: number; search?: string }): Promise<{ items: SavedSegment[]; page: number; total: number }>;
+            edit(edit: SavedSegmentEdit): Promise<null>;
+            play(id: string): Promise<null>;
+        };
         onChanged(listener: (state: PlaybackSnapshot) => Awaitable<void>): () => void;
         onTrackChanged(listener: (track: CurrentTrack | null) => Awaitable<void>): () => void;
         get(): Promise<PlaybackSnapshot>;
@@ -935,6 +1168,9 @@ export interface WorkshopContext {
         getLyrics(): Promise<{ lines: LyricLine[]; trackOffsetMs: number }>;
     };
     readonly audio: {
+        getSignalPath(): Promise<AudioSignalPath>;
+        /** Receives the latest snapshot when subscribed, then only on changes. */
+        onSignalPathChanged(listener: (path: AudioSignalPath) => Awaitable<void>): () => void;
         /** Latest local playback analysis, or null while no current frame is available. */
         onAnalysis(listener: (frame: AudioAnalysisFrame | null) => Awaitable<void>): () => void;
         getAnalysis(): Promise<AudioAnalysisFrame | null>;
@@ -986,6 +1222,10 @@ export interface WorkshopContext {
         registerProvider(id: string, descriptor: Descriptor, handlers: WorkshopMvProvider): void;
     };
     readonly sources: {
+        /** Admit playback of this plugin’s own paginated collection. Resolution continues after the action returns. */
+        playCollection(providerId: string, collectionId: string, options?: { startTrackId?: string }): Promise<SourceCollectionPlayback>;
+        cancelCollection(): Promise<SourceCollectionPlayback>;
+        collectionStatus(): Promise<SourceCollectionPlayback>;
         list(): Promise<SourceDescriptor[]>;
         search(source: SourceKey, query: string, options?: SourcePageOptions): Promise<SourceCatalogPage>;
         browse(source: SourceKey, collectionId?: string | null, options?: SourcePageOptions): Promise<SourceCatalogPage>;
@@ -1003,6 +1243,20 @@ export interface WorkshopContext {
         }) => Awaitable<Json>): void;
         list(): Promise<CommandDescriptor[]>;
         invoke(pluginId: string, commandId: string, input?: Json): Promise<Json>;
+    };
+    readonly actions: {
+        registerPlayerBar(id: string, descriptor: Descriptor & {
+            icon?: PlayerBarIcon;
+            /** Show this action only when a layout explicitly places it. */
+            layoutOnly?: boolean;
+        },
+            run: (input: { track: CurrentTrack | null; signal: AbortSignal }) => Awaitable<SurfaceActionResult | void>): void;
+        registerTrackMenu(id: string, descriptor: Descriptor & { localOnly?: boolean },
+            run: (input: { track: TrackMenuTarget; signal: AbortSignal }) => Awaitable<SurfaceActionResult | void>): void;
+    };
+    readonly playerBar: {
+        /** Register during activate. The user chooses a layout in Appearance settings. */
+        registerLayout(id: string, descriptor: Descriptor & { items: readonly PlayerBarItem[] }): void;
     };
     readonly metadata: TagRegistry;
     readonly covers: TagRegistry;

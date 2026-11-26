@@ -1,15 +1,27 @@
 import { createHash, randomBytes } from 'node:crypto';
 
 const pageSize = 24;
+const accountKey = 'navidrome-account';
 let account;
 let query = '';
 let offset = 0;
 let songs = [];
 let hasNext = false;
 
-export async function activate({ hostInvoke, pages, sources }) {
+export async function activate({ hostInvoke, pages, sources, credentials }) {
     const host = await hostInvoke('host.describe');
     if (!host.commands.includes('queue.submit')) throw new Error('ECHO does not provide queue.submit');
+    try {
+        const saved = await credentials.get(accountKey);
+        if (saved) {
+            const { base, username, salt, token } = JSON.parse(saved);
+            if (typeof username === 'string' && typeof salt === 'string' && /^[a-f0-9]{32}$/u.test(token)) {
+                account = { base: serverUrl(base), username, salt, token };
+            }
+        }
+    } catch {
+        account = undefined;
+    }
     pages.register('catalog', { title: 'Navidrome' }, openPage);
     sources.registerProvider('catalog', { title: 'Navidrome' }, {
         async search({ query, page, pageSize, signal }) {
@@ -48,25 +60,32 @@ function connected() {
     return account;
 }
 
-export async function handle({ method, input, signal }, { pluginId, queue }) {
+function serverUrl(value) {
+    const base = new URL(value.trim());
+    if (!['https:', 'http:'].includes(base.protocol) || base.username || base.password || base.search || base.hash) {
+        throw new Error('Use a plain HTTP(S) server address, including any deployment subpath.');
+    }
+    if (!base.pathname.endsWith('/')) base.pathname += '/';
+    return base;
+}
+
+export async function handle({ method, input, signal }, { pluginId, queue, credentials }) {
     switch (method) {
         case 'page.open': return openPage();
         case 'login': {
             const { server, username, password } = input.fields;
             if (!username.trim() || !password) throw new Error('Enter your Navidrome username and password.');
-            const base = new URL(server.trim());
-            if (!['https:', 'http:'].includes(base.protocol) || base.username || base.password || base.search || base.hash) {
-                throw new Error('Use a plain HTTP(S) server address, including any deployment subpath.');
-            }
-            if (!base.pathname.endsWith('/')) base.pathname += '/';
+            const base = serverUrl(server);
             const salt = randomBytes(12).toString('hex');
             const token = createHash('md5').update(password + salt).digest('hex');
             const candidate = { base, username: username.trim(), salt, token };
             await request(candidate, 'ping', {}, signal);
+            await credentials.set(accountKey, JSON.stringify({ ...candidate, base: base.href }));
             account = candidate;
             return searchPage();
         }
         case 'logout':
+            await credentials.remove(accountKey);
             account = undefined;
             songs = [];
             query = '';

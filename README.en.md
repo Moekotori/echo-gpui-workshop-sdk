@@ -46,6 +46,46 @@ Create a project with `node sdk.mjs init my-lyrics community.yourname.lyrics --t
 
 During activation call `context.lyrics.registerProvider(id, { title }, async ({ track, signal }) => candidates)`. Keep both plugin and provider IDs stable. Pass the abort signal to your request. Return up to 24 candidates with the catalog record’s title, artist and one of `syncedLyrics`, `karaokeLyrics`, or `plainLyrics`. Optional fields include `translationLyrics`, `romanizationLyrics`, album and duration in seconds. Instrumental records may return `instrumental: true`. The callback also receives `automatic` for automatic versus manual lookups. Return an empty array for a miss. The host scores results for tracks with a title, artist and duration, preserves existing lyrics and does not try another provider if the selected one is unavailable. Each lyric text field is limited to 512 KiB and the candidate list to 768 KiB.
 
+## Artist portraits
+
+Declare `"artwork.artistProvider"` in `gpui.requires.features`. During activation call
+`context.artwork.registerArtistProvider(id, { title }, async ({ artist, signal }) => candidate)`.
+`artist` contains `{ id, name, source }`, with `source` set to `Local` or `Legacy`.
+Return the source's `artistName` with either a public HTTPS `imageUrl` or a PNG/JPEG `dataUrl`
+carrying up to 256 KiB of image bytes. Return `null` if the identity is uncertain.
+The host compares the trimmed names case-insensitively.
+
+After the user runs and approves the plugin, ECHO requests missing portraits in the background as the user browses the artist wall or opens an artist. It preserves existing portraits and caches successful downloads. Stopping the plugin stops lookups and preserves cached images. Each plugin can register up to four providers, and each artist lookup tries up to four active providers.
+
+Use `artwork.artist(id, source?)` to read the saved portrait as `{ width, height, dataUrl }`, or `null` when missing. The read method does not start a lookup. Plugins that only read portraits can declare `"artwork.artist"` in `gpui.requires.commands`.
+
+Subscribe with `artwork.onArtistChanged(listener)` to invalidate visible thumbnails after a manual change or an automatic download. The `artwork.artistChanged` event carries a string `revision` and coalesces changes.
+
+## Customize playback and track menus
+
+Declare `"actions.native"` in `gpui.requires.features`. During activation use `actions.registerPlayerBar(id, { title }, run)` and `actions.registerTrackMenu(id, { title, localOnly? }, run)`. A player bar callback receives the current `track` or `null`. A track menu callback receives the selected catalog track with its ID and source. Both callbacks receive `signal` and can return `{ notice, page }` to display a message or open a page registered by the same plugin. Run `node sdk.mjs preview my-plugin --player-action my-id` or `--track-action my-id` with fixture data.
+
+### Custom main player bars
+
+Add `"playerBar.layout"` to `gpui.requires.features` and call `playerBar.registerLayout(id, { title, items })` during activation. After enabling the plugin, users can choose its layout under **Settings → Appearance → Player bar layout**. The selected layout uses the host's appearance, progress style and playback state.
+
+Items appear left to right. Use objects such as `{ type: 'track' }` for `track`, `previous`, `playPause`, `next`, `seek`, `like`, `lyrics`, `queue`, `volume`, `connect` or `spacer`. Include `playPause` and place each control or action at most once. Each plugin can register up to 4 layouts of 12 items each. For top-edge progress styles, `seek` places the time readout and keeps the slider along the top of the bar.
+
+Use `{ type: 'action', id: 'my-action' }` to place a player-bar action registered by the same plugin. Its optional `icon` can be `listMusic`, `bookmark`, `heart`, `radio`, `clock` or `star`. Set `layoutOnly: true` to show it only in layouts that reference it. The host restores the selected layout from an approved installed plugin at startup and falls back to the built-in layout when space is limited or the plugin is unavailable. Lyrics, mini players and big-screen modes have their own bars.
+
+Import the [Studio example](player-bar/plugin.mjs), or run `node sdk.mjs preview player-bar --player-layout studio` to inspect its registered layout and `--player-action now-playing` to try its callback.
+
+| API | Customize |
+| --- | --- |
+| `playback.bookmarks` | List, add, jump to, rename and remove track bookmarks. Use the current track's `sequence` for `add` and `jump`. |
+| `playback.savedSegments` | List, save, rename, relink, remove and play saved segments for local tracks. |
+| `library.trackVersions` / `library.editTrackVersions` | Read members, suggestions and recording families. Use the original string `revision` for local version edits. |
+| `library.linkedTracks` | Read tracks in their linked playback order. |
+
+## Audio signal path
+
+Use `audio.getSignalPath()` to display the current input format, output, DSP state, ReplayGain, resampling, buffering and underruns. Unavailable measurements are `null`. `trackSequence` identifies the same playback item as `playback.getCurrentTrack().sequence`. `audio.onSignalPathChanged(listener)` emits the initial snapshot and subsequent changes. Discover the command `audio.getSignalPath` and event `audio.signalPathChanged` in the host capabilities.
+
 ## Custom pages and actions
 
 Call `context.pages.register(id, { title }, open)` during activation to add a sidebar page. Selecting it opens the returned native UI in the main content area. Register each page with its own ID so users can switch between pages and revisit them with Back and Forward.
@@ -126,6 +166,9 @@ Native plugins can use `library.onFavoritesChanged(handler)` when only local fav
 
 ### Check an original ECHO plugin before migrating
 
+The [original API 2 extensions and osu! example](original/README.md) cover trusted web sessions, beatmap imports,
+Steam presence, PNG export, secure storage, native pages, and player and track menu actions.
+
 ```sh
 node sdk.mjs check-original ./my-original-plugin --action library:getTracks --event playback:status
 node sdk.mjs check-original ./my-original-plugin/content/community.echo --json
@@ -147,6 +190,16 @@ and returns a Boolean for each ID. Missing albums return `false`.
 smart-playlist rules and returns `{ items, page, pageSize, total, hasMore }`. Pages start at
 1 and hold up to 100 tracks. Search covers every matching candidate independently of the
 saved playlist limit. Use the installed host to test rule queries with your library.
+
+### Related albums, editions, and similar tracks
+
+- `library.relatedAlbums(id, source?)` returns up to 12 other albums by the album artist.
+- `library.albumVersions(id, source?)` returns the primary edition ID, linked editions, suggested editions, and measured loudness ranges in LU by album ID. Both album queries default to `Local` and accept `Legacy`.
+- `library.similarLocalTracks(id)` returns up to 24 similar tracks from the local catalog. Matching uses catalog data such as artist, genre, tempo, and release year and runs locally.
+
+Declare each command your plugin needs in `gpui.requires.commands`, for example `library.albumVersions`. Standalone apps can check support with `core.describe()` and call the same methods on `core.library`.
+
+### Original API 2 catalog lookup
 
 API 2 plugins use `echo.library.getSummary()`, `getAlbum(id)`, `getAlbumForTrack(trackId)`,
 `getArtist(id)`, `favorites.getAlbumStates(ids)`, and `searchTracks({ rules }, { page, pageSize })`
@@ -306,6 +359,7 @@ Path and folder predicates require `library:path`. Local skip predicates use que
 
 Use `library.tracksByIds(ids)` to look up a batch of local tracks. To play a particular queue occurrence,
 pass its `occurrenceId` and the page's `queueId` to `queue.playItem`.
+`queue.submit` accepts up to 1,000 tracks per call on the current host, subject to message size limits. Read `maxQueueItems` from `host.describe` for compatibility with older hosts.
 Read thumbnails with `artwork.track(id, source?)`, `artwork.album(id, source?)`, or `artwork.current(sequence?)`. Each resolves to `{width, height, dataUrl}` or `null`. Assign `dataUrl` to a key in `layout.images`. Passing the current track sequence rejects a late image after a track change.
 
 Use `queue.get({offset, limit, queueId})` to read 1–256 entries on the local or independent Core. Search with `queue.search(query, {source?, remoteId?})` and pass a hit’s queue ID and zero-based index to `queue.playAt(queueId, index)`. `queue.saved.list()` returns saved queue summaries with string IDs. Save, restore or remove using `queue.saved.save(queueId)`, `queue.saved.restore(queueId, snapshotId)` and `queue.saved.remove(snapshotId)`. Call `list()` on first open and subscribe with `queue.saved.onChanged(listener)` for later changes. The event supplies `snapshots` and `undoRemoveId`. Pass that ID to `queue.saved.undoRemove(id)` to undo the last deletion. For a runnable example, preview the live-library template with `--command inspect-session --input '{"query":"first"}'`.
@@ -376,9 +430,9 @@ echo-corectl /path/to/library.sqlite workshop invoke community.playlist-service 
 
 Import `createCoreClient` from `./standalone/core.mjs` in a Node application. TypeScript declarations ship alongside it. Provide `{database, appId, zone}` and use the controller in the platform SDK archive, put the matching `echo-corectl` on PATH, or pass its path as `executable` or `ECHO_CORECTL`. Build the native programs with `cargo build --release -p echo-server -p echo-client --bins`.
 
-Call `await core.describe()` for the running Core's command list and limits. Use `core.invoke(method, input)` for library, playlists, history, tags, lyrics, artwork, playback, queue, output and DSP operations. Each command uses its existing Workshop input schema and entitlement checks. The client also provides typed source browsing and search, queue reads and submission, playback control, and plugin-service calls. Plugin handlers see the caller as `app/<appId>`. Plugin-private credentials and storage belong to the plugin runtime.
+Call `await core.describe()` for the running Core's command list and limits. The typed client covers source browsing and search, queue editing and saved snapshots, playback control and speed, bookmarks and saved segments, track versions and ordered links, artwork, lyrics, history, timers, signal path, output and DSP. Use `core.invoke(method, input)` for any advertised command. Calls use the existing Workshop input schemas and entitlement checks. Plugin handlers see the caller as `app/<appId>`. Plugin-private credentials and storage belong to the plugin runtime.
 
-`for await (const snapshot of core.watch({signal}))` delivers an initial state followed by updates for the selected zone. Breaking out or aborting releases the subscription. Open a new subscription after a disconnect. Subsequent calls rediscover the Core. Check the resulting state before retrying an interrupted write. Call `core.close()` when finished.
+`core.forZone(2)` creates an independent client for the second playback zone. Each client sends commands to its own `zone` and has its own lifetime. `for await (const snapshot of core.watch({signal}))` delivers an initial state followed by updates for that zone. Breaking out or aborting releases the subscription. Open a new subscription after a disconnect. Subsequent calls rediscover the Core. Check the resulting state before retrying an interrupted write. Close each client when finished.
 
 Run `node standalone/player.mjs DATABASE` to list sources. Use `node standalone/player.mjs DATABASE PLUGIN PROVIDER "query" --zone 2` to search. Add `--append 1` or `--play 1` to select the first result.
 
@@ -399,3 +453,8 @@ Run `ECHO_STATION_URL='https://your-server.example/live.mp3' node standalone/sta
 The promise resolves after the Core acknowledges registration. Use stable IDs and resolve stream URLs at playback. Handle cancellation via the supplied signal. A second live instance using the same ID is rejected. Await `registration.close()` to stop serving, or close the client. Exiting the app releases its registrations. Observe `registration.closed` for disconnects and register again after the Core returns.
 
 Rust exposes `Client::register_workshop_app` with separate event and reply halves. Other languages can use `echo-corectl DATABASE sdk APP_ID provide` with newline-delimited JSON. Send a manifest with `sources: [{id,title,browse}]` and `commands: [{id,title}]`, then await `{"type":"ready"}`. For each `{type:"call", id, method, input}` reply once with `{id, value}` or `{id, error}`. On `{type:"cancel",id}`, abort and reply unless the terminal response was already sent. Close stdin to unregister. For acknowledged release and immediate ID reuse, send `{"type":"release"}` and wait for `{"type":"released"}`.
+
+
+## Library enrichment
+
+[Library enrichment](library-enrichment/README.md) scans local tracks in cursor-paged batches using `library.enrichment.scan`. It reviews online candidates before calling `library.enrichment.fillTags` or `lyrics.fillMissing`. The host checks that the data is still missing before saving. Use `network.request` for bounded HTTPS requests that respect the host network settings and `artwork.previewUrl` for image previews.
