@@ -370,6 +370,24 @@ export interface PlaylistSummaryPage {
     total: number;
     hasMore: boolean;
 }
+export interface PlaylistMembershipPage {
+    items: { playlistId: string; playlistTitle: string; itemId: string }[];
+    page: number;
+    hasMore: boolean;
+}
+export type PlaylistAppendPolicy = 'ask' | 'onlyNew' | 'keepAll';
+export type PlaylistAppendResult =
+    | { kind: 'appended'; added: number }
+    | { kind: 'duplicates'; newCount: number; duplicateCount: number };
+export interface PlaylistGroupPage {
+    items: { id: string; title: string; assigned: boolean }[];
+    page: number;
+    hasMore: boolean;
+}
+export type PlaylistGroupEdit =
+    | { action: 'create'; title: string; playlistId?: string }
+    | { action: 'rename'; groupId: string; title: string }
+    | { action: 'assign'; playlistId: string; groupId: string | null };
 export interface GenreQuery extends CatalogPageOptions {
     parent?: string;
     pageSize?: number;
@@ -1199,6 +1217,16 @@ export interface WorkshopContext {
         playlistItems(id: string, options?: { page?: number; pageSize?: number }): Promise<PlaylistItemPage>;
         playlistSummary(id: string): Promise<PlaylistSummary>;
         playlistSummaries(options?: { page?: number; pageSize?: number; search?: string }): Promise<PlaylistSummaryPage>;
+        /** Returns up to four stored occurrences per page, starting at page 1. */
+        findTrackInPlaylists(trackId: string, options?: { page?: number; groupId?: string }): Promise<PlaylistMembershipPage>;
+        /** The default duplicate policy reports conflicts before writing. */
+        appendPlaylistTracks(id: string, trackIds: string[], duplicates?: PlaylistAppendPolicy): Promise<PlaylistAppendResult>;
+        /** Transfers matched occurrence IDs between local manual playlists. A move returns an ID for recovery. */
+        transferPlaylistItems(id: string, targetId: string, itemIds: string[], mode?: 'copy' | 'move'): Promise<{ recoveryId: string | null }>;
+        playlistGroups(options?: { page?: number; playlistId?: string }): Promise<PlaylistGroupPage>;
+        /** A null group ID lists ungrouped playlists. */
+        playlistsInGroup(groupId: string | null, options?: { page?: number; search?: string }): Promise<CatalogPage>;
+        editPlaylistGroup(change: PlaylistGroupEdit): Promise<null>;
         createPlaylistWithDetails(details: { title: string; description?: string }): Promise<PlaylistSummary>;
         prependPlaylistTracks(id: string, trackIds: string[]): Promise<PlaylistItem[]>;
         removePlaylistItems(id: string, itemIds: string[]): Promise<{ affectedCount: number; recoveryId: string }>;

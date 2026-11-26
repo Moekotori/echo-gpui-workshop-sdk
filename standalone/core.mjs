@@ -200,6 +200,14 @@ export function createCoreClient({ database, appId, zone = 1, executable = defau
             linkedTracks: catalogItem('library.linkedTracks'),
             searchTracks: (rules, page = {}) => invoke('library.searchTracks', { ...page, rules }),
             playlistItems: (id, options = {}) => invoke('library.playlistItems', { ...options, id }),
+            findTrackInPlaylists: (trackId, options = {}) => invoke('library.findTrackInPlaylists', { ...options, trackId }),
+            appendPlaylistTracks: (id, trackIds, duplicates = 'ask') => invoke('library.appendPlaylistTracks', { id, trackIds, duplicates }),
+            transferPlaylistItems: (id, targetId, itemIds, mode = 'copy') => invoke('library.transferPlaylistItems', { id, targetId, itemIds, mode }),
+            playlistGroups: (options = {}) => invoke('library.playlistGroups', options),
+            playlistsInGroup: (groupId, options = {}) => invoke('library.playlistsInGroup', { ...options, groupId }),
+            editPlaylistGroup: change => invoke('library.editPlaylistGroup', change),
+            playlistRecovery: (page = 1) => invoke('library.playlistRecovery', { page }),
+            restorePlaylistRecovery: ({ kind, id }) => invoke('library.restorePlaylistRecovery', { kind, id }),
         },
         audio: {
             canvas: {

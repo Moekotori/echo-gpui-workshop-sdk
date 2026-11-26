@@ -62,7 +62,9 @@ export interface CoreClient {
     library: Pick<WorkshopContext['library'], 'query' | 'track' | 'summary' | 'album' | 'albumForTrack' | 'artist'
         | 'relatedAlbums' | 'albumVersions' | 'similarLocalTracks'
         | 'artistByName' | 'artistCredits' | 'albumCredits' | 'trackArtistCredits'
-        | 'albums' | 'artists' | 'trackVersions' | 'editTrackVersions' | 'linkedTracks' | 'searchTracks' | 'playlistItems'>;
+        | 'albums' | 'artists' | 'trackVersions' | 'editTrackVersions' | 'linkedTracks' | 'searchTracks' | 'playlistItems'
+        | 'findTrackInPlaylists' | 'appendPlaylistTracks' | 'transferPlaylistItems' | 'playlistGroups'
+        | 'playlistsInGroup' | 'editPlaylistGroup' | 'playlistRecovery' | 'restorePlaylistRecovery'>;
     audio: Omit<WorkshopContext['audio'], 'onAnalysis' | 'onSignalPathChanged'>;
     artwork: Pick<WorkshopContext['artwork'], 'track' | 'album' | 'artist' | 'current' | 'getPalette'>;
     history: WorkshopContext['history'];

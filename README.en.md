@@ -228,6 +228,16 @@ Declare each command your plugin needs in `gpui.requires.commands`, for example 
 
 The first three methods default to `Local` and accept `Legacy`. Plugins and standalone clients can check for the corresponding host commands by name.
 
+### Organizing local playlists
+
+- `library.findTrackInPlaylists(trackId, { page, groupId })` finds stored occurrences in manual playlists. Each occurrence has its own `itemId`, even when a track appears multiple times in the same playlist. Pages start at 1 and contain up to four occurrences.
+- `library.appendPlaylistTracks(id, trackIds, policy)` appends in input order. With the default `ask` policy, a duplicate returns `newCount` and `duplicateCount` before any tracks are written. Use `onlyNew` to skip duplicates or `keepAll` to preserve them.
+- `library.transferPlaylistItems(id, targetId, itemIds, mode)` copies or moves the selected IDs from `playlistItems` or a reverse lookup. Existing occurrences in the destination count toward the selected quantity. A move returns a `recoveryId` for `library.restorePlaylistRecovery({ kind: 'items', id: recoveryId })`.
+- `library.playlistGroups({ page, playlistId })` lists groups and marks the group containing the supplied playlist as `assigned`. `library.playlistsInGroup(groupId, { page, search })` browses group contents. Pass `null` for ungrouped playlists.
+- `library.editPlaylistGroup(change)` accepts `create`, `rename`, and `assign`. Include `playlistId` to assign a playlist as part of group creation. Assign a `null` group ID to remove a playlist from its group.
+
+Standalone clients expose the same methods on `core.library`. Each append or transfer accepts up to 1,000 entries. Transfers require matched playlist entries.
+
 ### Original API 2 catalog lookup
 
 API 2 plugins use `echo.library.getSummary()`, `getAlbum(id)`, `getAlbumForTrack(trackId)`,

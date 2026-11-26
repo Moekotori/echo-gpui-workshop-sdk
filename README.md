@@ -732,6 +732,16 @@ node sdk.mjs check-original ./my-original-plugin/content/community.echo --json
 
 前三项默认使用 `Local`，也支持 `Legacy`。插件和独立客户端都可以按名称检查对应宿主能力。
 
+### 整理本机歌单
+
+- `library.findTrackInPlaylists(trackId, { page, groupId })` 反查普通歌单中保存的条目。同一首歌在同一歌单出现多次时，每条都返回自己的 `itemId`。页码从 1 开始，每页最多 4 条。
+- `library.appendPlaylistTracks(id, trackIds, policy)` 按输入顺序追加。默认 `ask` 遇到重复时返回 `newCount` 和 `duplicateCount`，此时尚未写入。选 `onlyNew` 只追加尚未收录的曲目，选 `keepAll` 保留全部重复项。
+- `library.transferPlaylistItems(id, targetId, itemIds, mode)` 用 `playlistItems` 或反查结果的 `itemId` 复制或移动条目。目标中已有的同曲目出现次数会计入选择数量。`move` 返回 `recoveryId`，可用 `library.restorePlaylistRecovery({ kind: 'items', id: recoveryId })` 撤销。
+- `library.playlistGroups({ page, playlistId })` 分页读取分组。传入歌单 ID 时，可用 `assigned` 找到它所在的分组。`library.playlistsInGroup(groupId, { page, search })` 浏览分组内歌单，传 `null` 浏览未分组歌单。
+- `library.editPlaylistGroup(change)` 支持 `create`、`rename` 和 `assign`。创建时可附 `playlistId`，合并创建与归组为一次操作。归组时传 `groupId: null` 可以移回未分组。
+
+这些接口也可从独立客户端的 `core.library` 调用。追加和转移每次最多处理 1,000 项。未匹配的条目可继续通过 `playlistItems` 查看和处理，转移需要已匹配的条目。
+
 ### 原版曲库查询
 
 原版插件声明 `library:read` 后可用 `echo.library.getSummary()`、`getAlbum(id)`、
