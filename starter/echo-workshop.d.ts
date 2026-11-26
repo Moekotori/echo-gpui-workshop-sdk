@@ -59,7 +59,7 @@ export type WorkshopGlyph =
     | 'play' | 'pause' | 'refresh' | 'left' | 'right' | 'settings' | 'close' | 'music';
 export type WorkshopNode =
     | { type: 'row' | 'column'; children: WorkshopNode[]; style?: WorkshopBoxStyle }
-    | { type: 'text'; text: string; role?: 'title' | 'heading' | 'body' | 'muted' | 'accent'; size?: number; color?: string; truncate?: boolean }
+    | { type: 'text'; text: string; role?: 'title' | 'heading' | 'body' | 'muted' | 'accent'; size?: number; color?: string; fontFamily?: string; truncate?: boolean }
     | { type: 'image'; image: string; height: number; width?: number; radius?: number; alt?: string; contain?: boolean }
     | { type: 'field'; id: string; compact?: boolean; hideLabel?: boolean }
     | { type: 'button'; action: WorkshopAction; appearance?: 'primary' | 'quiet' | 'outline' | 'tab'; icon?: WorkshopGlyph; iconOnly?: boolean; selected?: boolean }
@@ -583,6 +583,69 @@ export interface PlaybackSnapshot {
     queuePosition: number;
     queueLength: number;
 }
+export interface PlaybackClock {
+    trackSequence: number | null;
+    /** Seek generation. Reset local interpolation on a generation or track change. */
+    generation: number;
+    status: PlaybackSnapshot['status'];
+    positionSeconds: number;
+    durationSeconds: number;
+    playbackRate: number;
+    /** Unix timestamp in milliseconds, taken when positionSeconds was sampled. */
+    sampledAtMs: number;
+}
+export interface MusicMetadata {
+    sequence: number;
+    bpm: number | null;
+    bpmEstimated: boolean;
+    beatOffsetMs: number | null;
+    genre: string | null;
+}
+
+export interface CanvasProfile {
+    durationSeconds: number;
+    sampleRate: number;
+    peak: number[];
+    rms: number[];
+    leftMin: number[];
+    leftMax: number[];
+    rightMin: number[];
+    rightMax: number[];
+}
+export interface CanvasSpectrogram {
+    columns: number;
+    bins: number;
+    /** Columns of unsigned bytes with ascending frequencies within each column. */
+    leftBase64: string;
+    rightBase64: string;
+}
+export type CanvasStatus = { state: 'pending'; progress: number }
+    | { state: 'failed'; error: string }
+    | { state: 'ready'; data: { profile: CanvasProfile; spectrogram: CanvasSpectrogram | null } };
+
+export interface AudioVisualizationOptions {
+    intervalMs?: number;
+    waveformSamples?: number;
+    spectrum?: boolean;
+    stereo?: boolean;
+    fftSize?: number;
+    bands?: number;
+    measurements?: boolean;
+    loudness?: boolean;
+}
+export interface AudioVisualizationFrame {
+    status: 'ready' | 'pending' | 'stale' | 'unavailable';
+    reason?: string | null;
+    source: 'native_post_dsp';
+    trackSequence: number;
+    sampleRate?: number;
+    channelOrder?: string[];
+    stereo?: { balance: number | null; phaseCorrelation: number | null } | null;
+    waveform?: { values: number[][]; samples: number; unit: 'linear-amplitude' } | null;
+    spectrum?: { values: number[][]; frequenciesHz: number[]; frequencyRangesHz: number[][]; unit: string } | null;
+    channels?: { samplePeakDbFS: number; rmsDbFS: number; peakHoldDbFS: number }[];
+    loudness?: { [key: string]: number | string | boolean | null } | null;
+}
 export interface LibraryChange {
     source: CatalogSource;
     revision: number;
@@ -868,6 +931,43 @@ export interface WorkshopTrackLyrics {
     })[];
 }
 
+export interface CurrentLyricsState {
+    sequence: number | null;
+    revision: number;
+    /** Whether the current playback session has a lyrics source. The document can still be empty. */
+    available: boolean;
+}
+export interface CurrentLyricsDocument {
+    state: CurrentLyricsState;
+    document: WorkshopTrackLyrics | null;
+}
+
+export interface LyricsViewLayout {
+    /** Usable content area in logical pixels, after reserved chrome. */
+    width: number;
+    height: number;
+    insetTop: number;
+    insetBottom: number;
+    fullscreen: boolean;
+    focused: boolean;
+    /** Coalescing interval for plugin-initiated page invalidation. */
+    minRefreshIntervalMs: number;
+    visible: boolean;
+    reducedMotion: boolean;
+    frameIntervalMs: number | null;
+    preferences: {
+        fontSize: number | null; secondaryFontSize: number | null; lineSpacingPercent: number | null;
+        translation: boolean; romanization: boolean; globalOffsetMs: number; correctionEnabled: boolean;
+        wordHighlight: boolean; fontFamily: string | null;
+    } | null;
+    appearance: { accent: number; text: number; muted: number; panel: number; appBg: number } | null;
+    /** Set only for pages declaring ui:system-fonts. Contains family names, not paths. */
+    systemFonts: string[] | null;
+    bundledFonts: string[];
+}
+
+export type LyricsViewPermission = 'clipboard:write' | 'window:fullscreen' | 'audio:dsp-ui' | 'lyrics:import' | 'ui:system-fonts';
+
 export type EnrichmentTag = 'Title' | 'Artist' | 'Album' | 'AlbumArtist' | 'Genre' | 'Year' | 'Track' | 'Disc';
 
 export interface EnrichmentTrack {
@@ -1023,6 +1123,10 @@ export interface WorkshopContext {
             exact: boolean;
         }) => Awaitable<WorkshopLyricsCandidate[]>): void;
         get(trackId?: string): Promise<WorkshopTrackLyrics | null>;
+        /** Read the current document, optionally rejecting a stale sequence or revision. */
+        getCurrent(expected?: { sequence?: number; revision?: number }): Promise<CurrentLyricsDocument>;
+        matchAmll(sequence: number): Promise<{ matched: boolean }>;
+        onChanged(listener: (state: CurrentLyricsState) => Awaitable<void>): () => void;
         /** Saves a provider result only while the track has no lyrics or explicit edit. */
         fillMissing(trackId: string, lyrics: WorkshopProviderLyrics): Promise<null>;
         applyCustom(trackId: string, text: string, format?: LyricsDocumentFormat): Promise<WorkshopTrackLyrics>;
@@ -1160,6 +1264,8 @@ export interface WorkshopContext {
         )) | null>): void;
         /** Pass CurrentTrack.sequence to reject a result after a track change. */
         current(sequence?: number): Promise<WorkshopArtwork | null>;
+        /** Returns the current cover's average RGB without transferring the artwork image. */
+        getPalette(sequence?: number): Promise<{ average: [number, number, number] } | null>;
     };
     readonly history: {
         list(options?: HistoryQuery): Promise<HistoryPage>;
@@ -1180,7 +1286,11 @@ export interface WorkshopContext {
         };
         onChanged(listener: (state: PlaybackSnapshot) => Awaitable<void>): () => void;
         onTrackChanged(listener: (track: CurrentTrack | null) => Awaitable<void>): () => void;
+        /** Initial clock sample and changed samples at up to 20 Hz. Keep the callback lightweight. */
+        onClock(listener: (clock: PlaybackClock) => Awaitable<void>): () => void;
         get(): Promise<PlaybackSnapshot>;
+        getClock(): Promise<PlaybackClock>;
+        getMusicMetadata(sequence: number): Promise<MusicMetadata | null>;
         getCurrentTrack(): Promise<CurrentTrack | null>;
         getRate(): Promise<number>;
         getSpeed(): Promise<PlaybackSpeed>;
@@ -1198,6 +1308,18 @@ export interface WorkshopContext {
         getLyrics(): Promise<{ lines: LyricLine[]; trackOffsetMs: number }>;
     };
     readonly audio: {
+        readonly canvas: {
+            /** Start current-track analysis for up to 4096 buckets. Release the handle when done. */
+            start(options: { sequence: number; buckets?: number; spectrogram?: boolean }): Promise<{ id: string }>;
+            status(id: string): Promise<CanvasStatus>;
+            release(id: string): Promise<null>;
+        };
+        readonly visualization: {
+            /** Open a native subscription. Poll no faster than the returned intervalMs. */
+            open(options?: AudioVisualizationOptions): Promise<{ id: string; intervalMs: number; sequence: number }>;
+            read(id: string): Promise<AudioVisualizationFrame>;
+            close(id: string): Promise<null>;
+        };
         getSignalPath(): Promise<AudioSignalPath>;
         /** Receives the latest snapshot when subscribed, then only on changes. */
         onSignalPathChanged(listener: (path: AudioSignalPath) => Awaitable<void>): () => void;
@@ -1240,10 +1362,13 @@ export interface WorkshopContext {
         /** Returns the method to use on a button, row action or range commit. */
         registerAction(id: string, run: (request: {
             fields: Readonly<Record<string, string>>; data: Json; signal: AbortSignal; windowId: string | null;
+            lyricsView: LyricsViewLayout | null;
         }) => Awaitable<WorkshopPage | void | null>): string;
         invalidate(pageId?: string): void;
-        register(id: string, descriptor: Descriptor & { window?: { width?: number; height?: number } }, open: (request: { signal: AbortSignal; windowId: string | null }) =>
-            Awaitable<WorkshopPage>): void;
+        register(id: string, descriptor: Descriptor & (
+            { presentation: 'lyrics-view'; window?: never; transparent?: boolean; permissions?: LyricsViewPermission[] } |
+            { presentation?: never; window?: { width?: number; height?: number } }
+        ), open: (request: { signal: AbortSignal; windowId: string | null; lyricsView: LyricsViewLayout | null }) => Awaitable<WorkshopPage>): void;
     };
     readonly mv: {
         registerSessionProvider(id: string, descriptor: Descriptor & {

@@ -40,6 +40,17 @@
             "events": { "type": "array", "items": { "type": "string" } }
           }
         },
+        "lyricsViewPermissions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "enum": ["clipboard:write", "window:fullscreen", "audio:dsp-ui", "lyrics:import", "ui:system-fonts", "audio:canvas", "audio:stereo-telemetry", "lyrics:match"] }
+        },
+        "lyricsViewFonts": {
+          "type": "array",
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "\\.(ttf|otf|woff|woff2)$" }
+        },
         "updateFeed": {
           "type": ["string", "null"],
           "pattern": "^https://[^#]+$",

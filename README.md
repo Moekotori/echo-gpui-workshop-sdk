@@ -808,6 +808,26 @@ node sdk.mjs preview my-library --command inspect-session --input '{"query":"fir
 和 `echo.library.favorites.moveTrack(itemId, position)`。排序时用 `favorites.getTracks()`
 返回的列表条目 ID。
 
+### 原生工坊歌词页
+
+在 `gpui.requires.features` 声明 `pages.lyricsView`，通过 `pages.register(id, { title, presentation: 'lyrics-view' }, open)` 注册。用户从插件页打开后，宿主把普通 `WorkshopPage` 或声明式 `layout` 放进歌词舞台，保留播放栏和关闭按钮。`Esc` 回到内置歌词页，`F5` 切换当前窗口全屏。宿主在尺寸、焦点或全屏状态变化后重新传入 `lyricsView`。其中 `width`、`height` 是避开宿主控件后的逻辑像素，`minRefreshIntervalMs` 是插件调用 `pages.invalidate(id)` 时的合并间隔。
+
+- `lyrics.onChanged(listener)` 先交付当前曲目的歌词版本，之后在曲目、歌词来源或歌词版本变化时推送。用 `lyrics.getCurrent({ sequence: event.sequence ?? undefined, revision: event.revision })` 读取逐行、逐字、翻译、音译和背景人声。异步读取遇到换歌或版本变化时返回 `lyrics-changed`，可等待下一个事件再读。
+- `playback.getClock()` 读取当前播放位置、速率、`sampledAtMs` 和跳转代数。`playback.onClock(listener)` 在有订阅时最多每秒交付 20 次变化。使用同一个时间基准外推播放位置，在暂停、曲目或跳转代数变化时重置。渲染页面时只需在展示内容变化后调用 `pages.invalidate(id)`。
+- `artwork.getPalette(sequence)` 返回当前封面的 RGB 均色。`artwork.current(sequence)` 与 `artwork.track(id, source)` 返回宿主生成的缩略图。队列、听歌历史、分页曲库和信号通路可用 `queue.get`、`history.list`、`library.query`、`audio.getSignalPath`。设置可保存到插件自己的 `storage`。
+- 原生页面按钮可使用 `{ label: '复制歌词', method: 'lyricsView.copyText', input: text }`。宿主仅在歌词页操作中处理这条动作，纯文本上限为 32 KiB。
+- 页面按钮还可调用 `lyricsView.setFullscreen`（`input` 为布尔值）、`lyricsView.back`（恢复内置歌词页）和 `lyricsView.openDsp`（打开宿主 DSP 工作台）。
+
+在清单 `gpui.lyricsViewPermissions` 声明用到的权限。页面需在 `permissions` 中再次声明宿主操作对应的权限。`clipboard:write`、`window:fullscreen`、`audio:dsp-ui` 和 `lyrics:import` 分别控制复制、全屏、DSP 工作台和 `lyricsView.importLyrics`。导入由宿主打开文件选择器并校验曲目序号。`ui:system-fonts` 让页面获得去重的字体族名。`lyricsView.preferences` 和 `appearance` 提供歌词外观与主题颜色，`visible`、`reducedMotion` 和 `frameIntervalMs` 供插件决定刷新节奏。用 `transparent: true` 把页面叠在当前原生歌词背景或 MV 上。
+
+`gpui.lyricsViewFonts` 可声明最多四个包内 TTF、OTF、WOFF 或 WOFF2 字体，单个资源解压后上限为 8 MiB。宿主验证并加载后，`lyricsView.bundledFonts` 返回可用族名。用文本节点的 `fontFamily` 选择包内字体或系统字体。
+
+- 声明 `lyrics:match` 后调用 `lyrics.matchAmll(sequence)`，由已启用的 AMLL 歌词提供器查找并应用通过宿主校验的候选。已有或手动编辑的歌词受保护。`playback.getMusicMetadata(sequence)` 返回可用的 BPM、估算标记、节拍偏移和流派。
+- 声明 `audio:canvas` 后调用 `audio.canvas.start({ sequence, buckets: 4096, spectrogram: true })`，用 `status(id)` 读取进度和结果，用 `release(id)` 取消或释放。输入限当前可访问的本地曲目。结果含左右声道极值、峰值、RMS 与可选的双声道频谱图，频谱字节按列排列。
+- 声明 `audio:stereo-telemetry` 后调用 `audio.visualization.open(options)`。按返回的 `intervalMs` 调用 `read(id)`，结束时调用 `close(id)`。原生 Audio Host 可提供短窗波形、双声道频谱、声道平衡和相位相关性。设置 `{ measurements: true, loudness: true }` 读取声道峰值、RMS 和可用的响度指标。设备切换、曲目切换和过期时应重新申请订阅。
+
+运行 `node sdk.mjs preview lyrics-view` 查看示例。安装宿主请从「插件」打开示例页面。
+
 ### 编辑本机曲目歌词
 
 用 `context.lyrics.get(trackId?)` 读取当前曲目或指定本机曲目的歌词。

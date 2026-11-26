@@ -129,6 +129,26 @@ The player resolves the stream when it needs to play. Use a stable `providerTrac
 
 For playback with the desktop closed, run `echo-server --local-core --database /path/to/library.sqlite --workshop-source community.stream-library`. Repeat the flag for additional providers. Install and approve the exact package in the workshop store beside the Core database, then stop its desktop instance before starting the Core. The Core opens the installed revision and its plugin data. Providers that need a login must restore their credentials when starting headless.
 
+## Native lyrics pages
+
+Declare `pages.lyricsView` in `gpui.requires.features` and register a page with `pages.register(id, { title, presentation: 'lyrics-view' }, open)`. Open it from Plugins to mount a `WorkshopPage` or declarative `layout` in the lyrics stage. The host keeps its transport and close button. Escape restores the built-in lyric view, and F5 toggles fullscreen. The `lyricsView` callback argument describes the usable content size, reserved insets, fullscreen and focus state, and the page invalidation interval.
+
+- Subscribe to `lyrics.onChanged` for a current lyrics revision and subsequent changes. Pass the revision and, when available, the sequence to `lyrics.getCurrent` to fetch the matching document. `lyrics-changed` indicates that a track or revision changed during the request.
+- Use `playback.getClock()` for a timestamped position and `playback.onClock()` for changed clock samples at up to 20 Hz. Reset interpolation when playback pauses or the track sequence or seek generation changes. Invalidate the page only when its visible content changes.
+- `artwork.getPalette(sequence)` returns the current cover's average RGB. `artwork.current(sequence)` and `artwork.track(id, source)` return thumbnails. The normal queue, history, library, signal path, and private storage APIs are available to native plugins.
+- A native lyrics page action can use `{ label: 'Copy lyrics', method: 'lyricsView.copyText', input: text }` to copy up to 32 KiB of plain text when activated by the user.
+- Buttons can use `lyricsView.setFullscreen` with a boolean `input`, `lyricsView.back` to restore the built-in lyrics view, and `lyricsView.openDsp` to open the host DSP workbench.
+
+Declare the permissions you use in `gpui.lyricsViewPermissions` and include the desktop permissions in the page descriptor. `clipboard:write`, `window:fullscreen`, `audio:dsp-ui` and `lyrics:import` enable the corresponding buttons. The `lyricsView.importLyrics` action opens a host file picker for the current track. `ui:system-fonts` adds font family names to the layout callback. Layout also includes lyrics preferences, theme colors and visibility. Set `transparent: true` to layer the page over the host lyrics background or MV.
+
+List up to four package-relative TTF, OTF, WOFF or WOFF2 resources in `gpui.lyricsViewFonts`. The host validates each asset up to 8 MiB after decompression and reports the usable families in `lyricsView.bundledFonts`. Set `fontFamily` on a text node to select a family.
+
+- With `lyrics:match`, `lyrics.matchAmll(sequence)` applies an eligible AMLL match to the current track while preserving existing lyrics. `playback.getMusicMetadata(sequence)` reports available BPM, beat offset and genre.
+- With `audio:canvas`, `audio.canvas.start({ sequence, buckets: 4096, spectrogram: true })` starts analysis of the current accessible local audio file. Poll `status(id)` and call `release(id)` to cancel or discard the job. Results contain stereo envelope, peak and RMS data and an optional stereo spectrogram stored in column-major bytes.
+- With `audio:stereo-telemetry`, use `audio.visualization.open(options)` and poll `read(id)` at the negotiated interval. Call `close(id)` when done. The Audio Host provides bounded waveform and spectrum frames with channel balance and phase correlation. Choose `{ measurements: true, loudness: true }` for channel meters and available loudness measurements. Reopen after a track or output replacement or an expired subscription.
+
+Run `node sdk.mjs preview lyrics-view` to try the example with offline data.
+
 ## Build and verify
 
 The [SDK ZIP](https://github.com/Moekotori/echo-gpui-workshop-sdk/releases/latest) includes an offline tool.

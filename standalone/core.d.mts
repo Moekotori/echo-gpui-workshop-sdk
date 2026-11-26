@@ -58,15 +58,15 @@ export interface CoreClient {
     queue: Omit<WorkshopContext['queue'], 'onChanged' | 'saved'> & {
         saved: Omit<WorkshopContext['queue']['saved'], 'onChanged'>;
     };
-    playback: Omit<WorkshopContext['playback'], 'onChanged' | 'onTrackChanged'>;
+    playback: Omit<WorkshopContext['playback'], 'onChanged' | 'onTrackChanged' | 'onClock'>;
     library: Pick<WorkshopContext['library'], 'query' | 'track' | 'summary' | 'album' | 'albumForTrack' | 'artist'
         | 'relatedAlbums' | 'albumVersions' | 'similarLocalTracks'
         | 'artistByName' | 'artistCredits' | 'albumCredits' | 'trackArtistCredits'
         | 'albums' | 'artists' | 'trackVersions' | 'editTrackVersions' | 'linkedTracks' | 'searchTracks' | 'playlistItems'>;
     audio: Omit<WorkshopContext['audio'], 'onAnalysis' | 'onSignalPathChanged'>;
-    artwork: Pick<WorkshopContext['artwork'], 'track' | 'album' | 'artist' | 'current'>;
+    artwork: Pick<WorkshopContext['artwork'], 'track' | 'album' | 'artist' | 'current' | 'getPalette'>;
     history: WorkshopContext['history'];
-    lyrics: Omit<WorkshopContext['lyrics'], 'registerProvider'>;
+    lyrics: Omit<WorkshopContext['lyrics'], 'registerProvider' | 'onChanged'>;
     sleepTimer: Omit<WorkshopContext['sleepTimer'], 'onTick'>;
     commands: WorkshopContext['commands']['core'];
     close(): void;

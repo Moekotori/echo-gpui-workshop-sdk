@@ -1,0 +1,18 @@
+{
+  "type": "echo-workshop-item",
+  "schemaVersion": 1,
+  "id": "community.lyrics-view-example",
+  "title": "Lyrics View Example",
+  "version": "0.1.0",
+  "content": { "kind": "plugin-package" },
+  "gpui": {
+    "protocol": 1,
+    "entry": "plugin.mjs",
+    "lyricsViewPermissions": ["clipboard:write", "window:fullscreen"],
+    "requires": {
+      "features": ["pages.lyricsView"],
+      "commands": ["lyrics.getCurrent", "playback.getClock", "artwork.getPalette"],
+      "events": ["lyrics.changed"]
+    }
+  }
+}

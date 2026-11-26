@@ -148,6 +148,8 @@ export function createCoreClient({ database, appId, zone = 1, executable = defau
             },
         },
         playback: {
+            getClock: () => invoke('playback.getClock'),
+            getMusicMetadata: sequence => invoke('playback.getMusicMetadata', { sequence }),
             get: () => invoke('playback.get'),
             getCurrentTrack: () => invoke('playback.getCurrentTrack'),
             control: command => invoke('playback.control', command),
@@ -200,6 +202,16 @@ export function createCoreClient({ database, appId, zone = 1, executable = defau
             playlistItems: (id, options = {}) => invoke('library.playlistItems', { ...options, id }),
         },
         audio: {
+            canvas: {
+                start: options => invoke('audio.canvas.start', options),
+                status: id => invoke('audio.canvas.status', { id }),
+                release: id => invoke('audio.canvas.release', { id }),
+            },
+            visualization: {
+                open: (options = {}) => invoke('audio.visualization.open', options),
+                read: id => invoke('audio.visualization.read', { id }),
+                close: id => invoke('audio.visualization.close', { id }),
+            },
             getSignalPath: () => invoke('audio.getSignalPath'),
             getAnalysis: () => invoke('audio.getAnalysis'),
             dsp: {
@@ -219,6 +231,7 @@ export function createCoreClient({ database, appId, zone = 1, executable = defau
             album: catalogItem('artwork.album'),
             artist: catalogItem('artwork.artist'),
             current: sequence => invoke('artwork.current', { sequence }),
+            getPalette: sequence => invoke('artwork.getPalette', { sequence }),
         },
         history: {
             list: (options = {}) => invoke('history.list', options),
@@ -226,6 +239,8 @@ export function createCoreClient({ database, appId, zone = 1, executable = defau
         },
         lyrics: {
             get: trackId => invoke('lyrics.readTrack', { trackId }),
+            getCurrent: (expected = {}) => invoke('lyrics.getCurrent', expected),
+            matchAmll: sequence => invoke('lyrics.matchAmll', { sequence }),
             fillMissing: (trackId, lyrics) => invoke('lyrics.fillMissing', { trackId, lyrics }),
             applyCustom: (trackId, text, format = 'lrc') => invoke('lyrics.applyCustom', { trackId, text, format }),
             setOffset: (trackId, offsetMs) => invoke('lyrics.setOffset', { trackId, offsetMs }),
